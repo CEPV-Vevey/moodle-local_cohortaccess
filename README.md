@@ -73,6 +73,11 @@ Users are not enrolled, so Moodle treats them as viewers (`is_viewing()`):
 - If a cohort member is also enrolled in a target course and loses their last
   enrolment, Moodle core removes all their role assignments in that course,
   including the plugin's one. The scheduled task restores it within the hour.
+- Access is normally effective on the user's next page load. If a user still
+  lands on the enrolment options page although *Check permissions* shows
+  `moodle/course:view` = Yes for them in the course, ask them to log out and log
+  in again (their session holds outdated permissions, for example after the
+  role definition was changed while they were logged in).
 
 ## Administration
 

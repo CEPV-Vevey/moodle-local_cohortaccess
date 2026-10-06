@@ -41,6 +41,7 @@ $string['norules'] = 'No rules defined yet.';
 $string['pluginname'] = 'Cohort course access';
 $string['privacy:metadata'] = 'The Cohort course access plugin does not store any personal data. Role assignments it creates are stored by the core role subsystem.';
 $string['role'] = 'Role';
+$string['rolenotassignable'] = 'You are not allowed to assign this role in this course or category.';
 $string['ruledeleted'] = 'Rule deleted.';
 $string['rulesaved'] = 'Rule saved.';
 $string['status'] = 'Status';

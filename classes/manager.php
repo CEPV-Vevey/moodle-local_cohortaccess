@@ -126,8 +126,9 @@ class manager {
      */
     public static function delete_rule(int $ruleid): void {
         global $DB;
-        self::remove_rule_assignments($ruleid);
+        // Row first, so that a concurrent sync of this rule finds nothing to assign.
         $DB->delete_records(self::TABLE, ['id' => $ruleid]);
+        self::remove_rule_assignments($ruleid);
     }
 
     /**
@@ -173,9 +174,11 @@ class manager {
     /**
      * Bring the role assignments of a rule in line with its configuration.
      *
-     * Expected assignments are the non-deleted cohort members when the rule is
-     * enabled and its target exists. Assignments of this rule with another role,
-     * another context or a user not expected are removed; missing ones are added.
+     * The rule is re-read from the database, so a stale copy cannot re-grant
+     * access after the rule was deleted or changed. Expected assignments are the
+     * non-deleted cohort members when the rule exists, is enabled and its target
+     * exists. Assignments of this rule with another role, another context or a
+     * user not expected are removed; missing ones are added.
      *
      * @param stdClass $rule Rule.
      * @return array{added: int, removed: int}
@@ -184,15 +187,16 @@ class manager {
         global $DB;
         core_php_time_limit::raise();
 
-        $context = self::get_target_context($rule);
+        $current = self::get_rule($rule->id);
+        $context = $current ? self::get_target_context($current) : null;
         $expected = [];
-        if ($rule->enabled && $context) {
+        if ($current && $current->enabled && $context) {
             $expected = $DB->get_fieldset_sql(
                 'SELECT cm.userid
                    FROM {cohort_members} cm
                    JOIN {user} u ON u.id = cm.userid AND u.deleted = 0
                   WHERE cm.cohortid = :cohortid',
-                ['cohortid' => $rule->cohortid]
+                ['cohortid' => $current->cohortid]
             );
             $expected = array_fill_keys($expected, true);
         }
@@ -207,7 +211,7 @@ class manager {
         $present = [];
         $toremove = [];
         foreach ($existing as $ra) {
-            $valid = $context && $ra->roleid == $rule->roleid && $ra->contextid == $context->id
+            $valid = $context && $ra->roleid == $current->roleid && $ra->contextid == $context->id
                 && isset($expected[$ra->userid]);
             if ($valid) {
                 $present[$ra->userid] = true;
@@ -222,23 +226,37 @@ class manager {
             $result['removed']++;
         }
         foreach (array_keys(array_diff_key($expected, $present)) as $userid) {
-            role_assign($rule->roleid, $userid, $context->id, self::COMPONENT, $rule->id);
+            role_assign($current->roleid, $userid, $context->id, self::COMPONENT, $rule->id);
             $result['added']++;
         }
         return $result;
     }
 
     /**
-     * Synchronise all rules.
+     * Synchronise all rules and remove assignments left by rules that no longer exist.
      *
      * @return array{added: int, removed: int} Totals.
      */
     public static function sync_all(): array {
+        global $DB;
         $totals = ['added' => 0, 'removed' => 0];
         foreach (self::get_rules() as $rule) {
             $result = self::sync_rule($rule);
             $totals['added'] += $result['added'];
             $totals['removed'] += $result['removed'];
+        }
+
+        $orphans = $DB->get_records_sql(
+            'SELECT ra.itemid, COUNT(1) AS total
+               FROM {role_assignments} ra
+          LEFT JOIN {' . self::TABLE . '} r ON r.id = ra.itemid
+              WHERE ra.component = :component AND r.id IS NULL
+           GROUP BY ra.itemid',
+            ['component' => self::COMPONENT]
+        );
+        foreach ($orphans as $orphan) {
+            self::remove_rule_assignments($orphan->itemid);
+            $totals['removed'] += $orphan->total;
         }
         return $totals;
     }
@@ -250,6 +268,29 @@ class manager {
      */
     public static function remove_rule_assignments(int $ruleid): void {
         role_unassign_all(['component' => self::COMPONENT, 'itemid' => $ruleid]);
+    }
+
+    /**
+     * Display names of the parts of a rule, formatted for HTML output (already escaped).
+     *
+     * @param stdClass $rule Rule.
+     * @return stdClass cohort, role, target (HTML-safe strings) and targeturl (moodle_url, or null if the target is missing).
+     */
+    public static function describe_rule(stdClass $rule): stdClass {
+        global $DB;
+        $cohort = $DB->get_record('cohort', ['id' => $rule->cohortid]);
+        $role = $DB->get_record('role', ['id' => $rule->roleid]);
+        $desc = (object) [
+            'cohort' => $cohort ? format_string($cohort->name, true, ['context' => $cohort->contextid]) : '?',
+            'role' => $role ? role_get_name($role, context_system::instance()) : '?',
+            'target' => get_string('targetmissing', 'local_cepv_cohortaccess'),
+            'targeturl' => null,
+        ];
+        if ($context = self::get_target_context($rule)) {
+            $desc->target = $context->get_context_name(false);
+            $desc->targeturl = $context->get_url();
+        }
+        return $desc;
     }
 
     /**

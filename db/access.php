@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
     'local/cepv_cohortaccess:manage' => [
-        'riskbitmask' => RISK_CONFIG | RISK_PERSONAL,
+        'riskbitmask' => RISK_CONFIG | RISK_PERSONAL | RISK_XSS | RISK_SPAM,
         'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes' => [

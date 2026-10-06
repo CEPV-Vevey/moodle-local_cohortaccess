@@ -39,6 +39,11 @@ Créer un rôle dédié, par exemple « Consultation cours », avec au minimum :
 - `moodle/course:viewhiddencourses` — seulement si les cours cibles peuvent être
   cachés.
 
+Dans la définition du rôle, cocher les types de contexte **Cours** et **Catégorie
+de cours** : seuls ces rôles sont proposés, et l'utilisateur qui crée la règle doit
+avoir le droit d'attribuer ce rôle dans le cours ou la catégorie cible
+(`moodle/role:assign` + « Autoriser l'attribution »).
+
 Le plugin ne modifie jamais la définition des rôles. Il affiche un avertissement
 (non bloquant) si le rôle choisi n'a pas ces capacités.
 

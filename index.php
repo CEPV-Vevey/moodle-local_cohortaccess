@@ -32,32 +32,6 @@ $id = optional_param('id', 0, PARAM_INT);
 
 admin_externalpage_setup('local_cepv_cohortaccess');
 $baseurl = new moodle_url('/local/cepv_cohortaccess/index.php');
-$syscontext = context_system::instance();
-
-/**
- * Human-readable description of a rule's parts.
- *
- * @param stdClass $rule Rule.
- * @return stdClass cohort, role and target names (plain text), plus targeturl (or null).
- */
-function local_cepv_cohortaccess_describe(stdClass $rule): stdClass {
-    global $DB;
-    $syscontext = context_system::instance();
-    $cohort = $DB->get_record('cohort', ['id' => $rule->cohortid]);
-    $role = $DB->get_record('role', ['id' => $rule->roleid]);
-    $desc = (object) [
-        'cohort' => $cohort ? format_string($cohort->name, true, ['context' => $cohort->contextid]) : '?',
-        'role' => $role ? role_get_name($role, $syscontext) : '?',
-        'target' => get_string('targetmissing', 'local_cepv_cohortaccess'),
-        'targeturl' => null,
-    ];
-    $context = manager::get_target_context($rule);
-    if ($context) {
-        $desc->target = $context->get_context_name(false);
-        $desc->targeturl = $context->get_url();
-    }
-    return $desc;
-}
 
 if ($action) {
     $rule = manager::get_rule($id);
@@ -69,7 +43,7 @@ if ($action) {
             echo $OUTPUT->header();
             $confirmurl = new moodle_url($baseurl, ['action' => 'delete', 'id' => $id, 'confirm' => 1]);
             echo $OUTPUT->confirm(
-                get_string('confirmdelete', 'local_cepv_cohortaccess', local_cepv_cohortaccess_describe($rule)),
+                get_string('confirmdelete', 'local_cepv_cohortaccess', manager::describe_rule($rule)),
                 new single_button($confirmurl, get_string('delete'), 'post', single_button::BUTTON_DANGER),
                 $baseurl
             );
@@ -123,8 +97,8 @@ $table->head = [
 ];
 $table->attributes['class'] = 'generaltable';
 foreach ($rules as $rule) {
-    $desc = local_cepv_cohortaccess_describe($rule);
-    $target = $desc->targeturl ? html_writer::link($desc->targeturl, s($desc->target)) : s($desc->target);
+    $desc = manager::describe_rule($rule);
+    $target = $desc->targeturl ? html_writer::link($desc->targeturl, $desc->target) : $desc->target;
 
     $members = manager::count_members($rule->cohortid) . html_writer::div(
         get_string('assignments', 'local_cepv_cohortaccess', manager::count_assignments($rule->id)),
@@ -156,7 +130,7 @@ foreach ($rules as $rule) {
         html_writer::link(new moodle_url($baseurl, ['action' => 'delete', 'id' => $rule->id]), get_string('delete')),
     ];
 
-    $table->data[] = [s($desc->cohort), $target, s($desc->role), $members, $status, implode(' · ', $actions)];
+    $table->data[] = [$desc->cohort, $target, $desc->role, $members, $status, implode(' · ', $actions)];
 }
 echo html_writer::table($table);
 echo $OUTPUT->footer();

@@ -67,7 +67,16 @@ class rule_form extends \moodleform {
         );
         $mform->hideIf('categoryid', 'targettype', 'neq', manager::TARGET_CATEGORY);
 
-        $roles = role_fix_names(get_all_roles(), context_system::instance(), ROLENAME_ORIGINAL, true);
+        // Roles usable in a course or category context; assignability by the current
+        // user in the actual target context is checked in validation().
+        $roleids = array_merge(get_roles_for_contextlevels(CONTEXT_COURSE), get_roles_for_contextlevels(CONTEXT_COURSECAT));
+        if (!empty($this->_customdata['rule'])) {
+            $roleids[] = $this->_customdata['rule']->roleid;
+        }
+        $roles = array_intersect_key(
+            role_fix_names(get_all_roles(), context_system::instance(), ROLENAME_ORIGINAL, true),
+            array_flip($roleids)
+        );
         $mform->addElement('autocomplete', 'roleid', get_string('role', 'local_cepv_cohortaccess'), ['' => ''] + $roles);
         $mform->addRule('roleid', null, 'required', null, 'client');
 
@@ -106,7 +115,8 @@ class rule_form extends \moodleform {
     }
 
     /**
-     * Validation: target required and existing, role and cohort existing, no duplicate rule.
+     * Validation: target required and existing, role and cohort existing, role assignable
+     * by the current user in the target context, no duplicate rule.
      *
      * @param array $data Submitted data.
      * @param array $files Submitted files.
@@ -134,10 +144,34 @@ class rule_form extends \moodleform {
             $errors['courseid'] = get_string('required');
         }
 
+        if (!$errors && !$this->is_role_allowed($rule)) {
+            $errors['roleid'] = get_string('rolenotassignable', 'local_cepv_cohortaccess');
+        }
         if (!$errors && manager::rule_exists($rule, $rule->id)) {
             $errors['cohortid'] = get_string('duplicaterule', 'local_cepv_cohortaccess');
         }
         return $errors;
+    }
+
+    /**
+     * Whether the current user may give this role in the rule's target context.
+     *
+     * The existing role of an edited rule is kept even if it is no longer assignable,
+     * as long as the target does not change.
+     *
+     * @param stdClass $rule Submitted rule fields.
+     * @return bool
+     */
+    private function is_role_allowed(stdClass $rule): bool {
+        $existing = $this->_customdata['rule'] ?? null;
+        if (
+            $existing && $existing->roleid == $rule->roleid && $existing->targettype === $rule->targettype
+                && $existing->targetid == $rule->targetid
+        ) {
+            return true;
+        }
+        $context = manager::get_target_context($rule);
+        return $context && array_key_exists($rule->roleid, get_assignable_roles($context, ROLENAME_ORIGINAL));
     }
 
     /**

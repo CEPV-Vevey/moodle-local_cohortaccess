@@ -260,6 +260,55 @@ final class manager_test extends \advanced_testcase {
         $this->assertEquals(3, manager::count_assignments($rule->id));
     }
 
+    public function test_sync_all_removes_assignments_of_missing_rules(): void {
+        $context = context_course::instance($this->course->id);
+        $rule = $this->create_course_rule();
+        $orphanid = $rule->id + 1000;
+        role_assign($this->roleid, $this->members[0]->id, $context->id, manager::COMPONENT, $orphanid);
+
+        $this->assertEquals(['added' => 0, 'removed' => 1], manager::sync_all());
+        $this->assertEquals(0, $this->count_ras($orphanid));
+        $this->assertEquals(3, $this->count_ras($rule->id));
+    }
+
+    public function test_sync_of_stale_rule_does_not_recreate_deleted_rule_assignments(): void {
+        $rule = $this->create_course_rule();
+        $stale = clone $rule;
+        manager::delete_rule($rule->id);
+
+        $this->assertEquals(['added' => 0, 'removed' => 0], manager::sync_rule($stale));
+        $this->assertEquals(0, $this->count_ras($rule->id));
+    }
+
+    public function test_sync_of_stale_rule_uses_current_state(): void {
+        $rule = $this->create_course_rule();
+        $stale = clone $rule;
+        manager::set_enabled($rule->id, false);
+
+        manager::sync_rule($stale);
+        $this->assertEquals(0, $this->count_ras($rule->id));
+    }
+
+    public function test_describe_rule_returns_names_escaped_once(): void {
+        global $DB;
+        $DB->set_field('cohort', 'name', "Cours d'été & co", ['id' => $this->cohort->id]);
+        $DB->set_field('course', 'fullname', 'R&D <b>', ['id' => $this->course->id]);
+        $rule = $this->create_course_rule();
+
+        $desc = manager::describe_rule($rule);
+
+        $this->assertEquals(format_string("Cours d'été & co"), $desc->cohort);
+        $this->assertStringNotContainsString('&amp;amp;', $desc->target);
+        $this->assertStringNotContainsString('<b>', $desc->target);
+        $this->assertEquals('cepvview', $desc->role);
+        $this->assertEquals(new \moodle_url('/course/view.php', ['id' => $this->course->id]), $desc->targeturl);
+
+        $rule->targetid += 1000;
+        $desc = manager::describe_rule($rule);
+        $this->assertNull($desc->targeturl);
+        $this->assertEquals(get_string('targetmissing', 'local_cepv_cohortaccess'), $desc->target);
+    }
+
     public function test_uninstall_removes_only_plugin_assignments(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/local/cepv_cohortaccess/db/uninstall.php');

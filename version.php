@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_cepv_cohortaccess';
-$plugin->version = 2026100500;
+$plugin->version = 2026100600;
 $plugin->requires = 2025041400;
 $plugin->supported = [500, 501];
 $plugin->maturity = MATURITY_BETA;

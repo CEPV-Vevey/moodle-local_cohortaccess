@@ -41,6 +41,7 @@ $string['norules'] = 'Aucune règle définie.';
 $string['pluginname'] = 'Accès aux cours par cohorte';
 $string['privacy:metadata'] = 'Le plugin Accès aux cours par cohorte ne stocke aucune donnée personnelle. Les attributions de rôle qu\'il crée sont stockées par le sous-système des rôles.';
 $string['role'] = 'Rôle';
+$string['rolenotassignable'] = 'Vous n\'êtes pas autorisé à attribuer ce rôle dans ce cours ou cette catégorie.';
 $string['ruledeleted'] = 'Règle supprimée.';
 $string['rulesaved'] = 'Règle enregistrée.';
 $string['status'] = 'État';

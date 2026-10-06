@@ -44,6 +44,7 @@ final class rule_form_test extends \advanced_testcase {
         $this->cohort = $this->getDataGenerator()->create_cohort();
         $this->course = $this->getDataGenerator()->create_course();
         $this->roleid = create_role('cepvview', 'cepvview', '');
+        set_role_contextlevels($this->roleid, [CONTEXT_COURSE, CONTEXT_COURSECAT]);
     }
 
     /**
@@ -108,6 +109,50 @@ final class rule_form_test extends \advanced_testcase {
         [$rule, $errors] = $this->submit(['courseid' => $this->course->id, 'enabled' => 0], $existing);
         $this->assertEmpty($errors);
         $this->assertEquals($existing->id, $rule->id);
+        $this->assertEquals(0, $rule->enabled);
+    }
+
+    public function test_role_must_be_assignable_in_target_context(): void {
+        $systemonly = create_role('sysonly', 'sysonly', '');
+        set_role_contextlevels($systemonly, [CONTEXT_SYSTEM]);
+
+        [$rule, $errors] = $this->submit(['courseid' => $this->course->id, 'roleid' => $systemonly]);
+
+        $this->assertNull($rule);
+        $this->assertArrayHasKey('roleid', $errors);
+    }
+
+    public function test_delegated_manager_limited_to_roles_they_may_assign(): void {
+        global $DB;
+        $syscontext = \context_system::instance();
+        $coordinator = create_role('coordinator', 'coordinator', '');
+        set_role_contextlevels($coordinator, [CONTEXT_SYSTEM]);
+        assign_capability('local/cepv_cohortaccess:manage', CAP_ALLOW, $coordinator, $syscontext->id);
+        assign_capability('moodle/role:assign', CAP_ALLOW, $coordinator, $syscontext->id);
+        core_role_set_assign_allowed($coordinator, $this->roleid);
+        $user = $this->getDataGenerator()->create_user();
+        role_assign($coordinator, $user->id, $syscontext->id);
+        $this->setUser($user);
+        $editingteacher = $DB->get_field('role', 'id', ['shortname' => 'editingteacher']);
+
+        [$rule, $errors] = $this->submit(['courseid' => $this->course->id, 'roleid' => $editingteacher]);
+        $this->assertNull($rule);
+        $this->assertArrayHasKey('roleid', $errors);
+
+        [$rule, $errors] = $this->submit(['courseid' => $this->course->id]);
+        $this->assertEmpty($errors);
+        $this->assertEquals($this->roleid, $rule->roleid);
+    }
+
+    public function test_editing_keeps_current_role_even_if_no_longer_assignable(): void {
+        $existing = manager::create_rule((object) ['cohortid' => $this->cohort->id,
+            'targettype' => manager::TARGET_COURSE, 'targetid' => $this->course->id,
+            'roleid' => $this->roleid, 'enabled' => 1]);
+        set_role_contextlevels($this->roleid, [CONTEXT_SYSTEM]);
+
+        [$rule, $errors] = $this->submit(['courseid' => $this->course->id, 'enabled' => 0], $existing);
+
+        $this->assertEmpty($errors);
         $this->assertEquals(0, $rule->enabled);
     }
 

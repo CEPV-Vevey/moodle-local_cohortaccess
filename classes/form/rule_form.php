@@ -55,8 +55,12 @@ class rule_form extends \moodleform {
         $mform->addElement('course', 'courseid', get_string('targetcourse', 'local_cepv_cohortaccess'));
         $mform->hideIf('courseid', 'targettype', 'neq', manager::TARGET_COURSE);
 
-        $mform->addElement('autocomplete', 'categoryid', get_string('targetcategory', 'local_cepv_cohortaccess'),
-            ['' => ''] + core_course_category::make_categories_list());
+        $mform->addElement(
+            'autocomplete',
+            'categoryid',
+            get_string('targetcategory', 'local_cepv_cohortaccess'),
+            ['' => ''] + core_course_category::make_categories_list()
+        );
         $mform->hideIf('categoryid', 'targettype', 'neq', manager::TARGET_CATEGORY);
 
         $roles = role_fix_names(get_all_roles(), context_system::instance(), ROLENAME_ORIGINAL, true);
@@ -119,8 +123,10 @@ class rule_form extends \moodleform {
             if (!$rule->targetid || !$DB->record_exists('course_categories', ['id' => $rule->targetid])) {
                 $errors['categoryid'] = get_string('required');
             }
-        } else if (!$rule->targetid || $rule->targetid == SITEID
-                || !$DB->record_exists('course', ['id' => $rule->targetid])) {
+        } else if (
+            !$rule->targetid || $rule->targetid == SITEID
+                || !$DB->record_exists('course', ['id' => $rule->targetid])
+        ) {
             $errors['courseid'] = get_string('required');
         }
 

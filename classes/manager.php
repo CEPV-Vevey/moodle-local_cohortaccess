@@ -139,15 +139,18 @@ class manager {
      */
     public static function rule_exists(stdClass $data, int $excludeid = 0): bool {
         global $DB;
-        return $DB->record_exists_select(self::TABLE,
+        return $DB->record_exists_select(
+            self::TABLE,
             'cohortid = :cohortid AND targettype = :targettype AND targetid = :targetid
-             AND roleid = :roleid AND id <> :excludeid', [
+             AND roleid = :roleid AND id <> :excludeid',
+            [
                 'cohortid' => $data->cohortid,
                 'targettype' => $data->targettype,
                 'targetid' => $data->targetid,
                 'roleid' => $data->roleid,
                 'excludeid' => $excludeid,
-            ]);
+            ]
+        );
     }
 
     /**
@@ -188,13 +191,19 @@ class manager {
                 'SELECT cm.userid
                    FROM {cohort_members} cm
                    JOIN {user} u ON u.id = cm.userid AND u.deleted = 0
-                  WHERE cm.cohortid = :cohortid', ['cohortid' => $rule->cohortid]);
+                  WHERE cm.cohortid = :cohortid',
+                ['cohortid' => $rule->cohortid]
+            );
             $expected = array_fill_keys($expected, true);
         }
 
         $result = ['added' => 0, 'removed' => 0];
-        $existing = $DB->get_recordset('role_assignments',
-            ['component' => self::COMPONENT, 'itemid' => $rule->id], '', 'id, roleid, userid, contextid');
+        $existing = $DB->get_recordset(
+            'role_assignments',
+            ['component' => self::COMPONENT, 'itemid' => $rule->id],
+            '',
+            'id, roleid, userid, contextid'
+        );
         $present = [];
         $toremove = [];
         foreach ($existing as $ra) {
@@ -255,7 +264,7 @@ class manager {
         global $DB;
         $warnings = [];
         $syscontextid = context_system::instance()->id;
-        $allowed = function(string $capability) use ($DB, $rule, $syscontextid): bool {
+        $allowed = function (string $capability) use ($DB, $rule, $syscontextid): bool {
             return $DB->record_exists('role_capabilities', [
                 'roleid' => $rule->roleid,
                 'contextid' => $syscontextid,
@@ -291,7 +300,9 @@ class manager {
             'SELECT COUNT(1)
                FROM {cohort_members} cm
                JOIN {user} u ON u.id = cm.userid AND u.deleted = 0
-              WHERE cm.cohortid = :cohortid', ['cohortid' => $cohortid]);
+              WHERE cm.cohortid = :cohortid',
+            ['cohortid' => $cohortid]
+        );
     }
 
     /**

@@ -88,14 +88,22 @@ if ($action) {
     } else {
         throw new moodle_exception('invalidparameter', 'debug', $baseurl);
     }
-    redirect($baseurl, get_string('syncresult', 'local_cepv_cohortaccess', (object) $result), null,
-        \core\output\notification::NOTIFY_SUCCESS);
+    redirect(
+        $baseurl,
+        get_string('syncresult', 'local_cepv_cohortaccess', (object) $result),
+        null,
+        \core\output\notification::NOTIFY_SUCCESS
+    );
 }
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('pluginname', 'local_cepv_cohortaccess'));
-echo $OUTPUT->single_button(new moodle_url('/local/cepv_cohortaccess/edit.php'),
-    get_string('addrule', 'local_cepv_cohortaccess'), 'get', ['type' => single_button::BUTTON_PRIMARY]);
+echo $OUTPUT->single_button(
+    new moodle_url('/local/cepv_cohortaccess/edit.php'),
+    get_string('addrule', 'local_cepv_cohortaccess'),
+    'get',
+    ['type' => single_button::BUTTON_PRIMARY]
+);
 
 $rules = manager::get_rules();
 if (!$rules) {
@@ -119,7 +127,9 @@ foreach ($rules as $rule) {
     $target = $desc->targeturl ? html_writer::link($desc->targeturl, s($desc->target)) : s($desc->target);
 
     $members = manager::count_members($rule->cohortid) . html_writer::div(
-        get_string('assignments', 'local_cepv_cohortaccess', manager::count_assignments($rule->id)), 'small text-muted');
+        get_string('assignments', 'local_cepv_cohortaccess', manager::count_assignments($rule->id)),
+        'small text-muted'
+    );
 
     $status = $rule->enabled
         ? html_writer::span(get_string('enabled', 'local_cepv_cohortaccess'), 'badge bg-success text-white')
@@ -135,8 +145,10 @@ foreach ($rules as $rule) {
     $actionurl = fn(string $action) => new moodle_url($baseurl, ['action' => $action, 'id' => $rule->id,
         'sesskey' => sesskey()]);
     $actions = [
-        html_writer::link(new moodle_url('/local/cepv_cohortaccess/edit.php', ['id' => $rule->id]),
-            get_string('edit')),
+        html_writer::link(
+            new moodle_url('/local/cepv_cohortaccess/edit.php', ['id' => $rule->id]),
+            get_string('edit')
+        ),
         $rule->enabled
             ? html_writer::link($actionurl('disable'), get_string('disable', 'local_cepv_cohortaccess'))
             : html_writer::link($actionurl('enable'), get_string('enable', 'local_cepv_cohortaccess')),

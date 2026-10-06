@@ -104,8 +104,10 @@ final class manager_test extends \advanced_testcase {
      */
     private function count_ras(int $ruleid, array $extra = []): int {
         global $DB;
-        return $DB->count_records('role_assignments',
-            ['component' => manager::COMPONENT, 'itemid' => $ruleid] + $extra);
+        return $DB->count_records(
+            'role_assignments',
+            ['component' => manager::COMPONENT, 'itemid' => $ruleid] + $extra
+        );
     }
 
     public function test_course_rule_assigns_role_without_enrolment(): void {
@@ -113,8 +115,10 @@ final class manager_test extends \advanced_testcase {
         $rule = $this->create_course_rule();
         $context = context_course::instance($this->course->id);
 
-        $this->assertEquals(3, $this->count_ras($rule->id,
-            ['contextid' => $context->id, 'roleid' => $this->roleid]));
+        $this->assertEquals(3, $this->count_ras(
+            $rule->id,
+            ['contextid' => $context->id, 'roleid' => $this->roleid]
+        ));
         $this->assertEquals(0, $DB->count_records('user_enrolments'));
         foreach ($this->members as $user) {
             $this->assertEmpty(enrol_get_all_users_courses($user->id));
@@ -186,8 +190,10 @@ final class manager_test extends \advanced_testcase {
 
         $this->assertEquals(0, $this->count_ras($rule->id, ['contextid' => $oldcontext->id]));
         $this->assertEquals(0, $this->count_ras($rule->id, ['roleid' => $this->roleid]));
-        $this->assertEquals(3, $this->count_ras($rule->id,
-            ['contextid' => $newcontext->id, 'roleid' => $newroleid]));
+        $this->assertEquals(3, $this->count_ras(
+            $rule->id,
+            ['contextid' => $newcontext->id, 'roleid' => $newroleid]
+        ));
         $this->assertFalse(can_access_course($this->course, $this->members[0]));
         $this->assertTrue(can_access_course($newcourse, $this->members[0]));
     }
@@ -272,13 +278,17 @@ final class manager_test extends \advanced_testcase {
 
         $noviewrole = create_role('noview', 'noview', '');
         $rule = $this->create_course_rule(['roleid' => $noviewrole]);
-        $this->assertContains(get_string('warningnocourseview', 'local_cepv_cohortaccess'),
-            manager::get_role_warnings($rule));
+        $this->assertContains(
+            get_string('warningnocourseview', 'local_cepv_cohortaccess'),
+            manager::get_role_warnings($rule)
+        );
 
         $hidden = $this->getDataGenerator()->create_course(['visible' => 0]);
         $rule = $this->create_course_rule(['targetid' => $hidden->id]);
-        $this->assertEquals([get_string('warningnoviewhidden', 'local_cepv_cohortaccess')],
-            manager::get_role_warnings($rule));
+        $this->assertEquals(
+            [get_string('warningnoviewhidden', 'local_cepv_cohortaccess')],
+            manager::get_role_warnings($rule)
+        );
 
         $rule = $this->create_course_rule(['targetid' => $hidden->id,
             'roleid' => $this->create_view_role('viewhidden', true)]);

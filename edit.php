@@ -57,8 +57,12 @@ if ($form->is_cancelled()) {
     foreach (manager::get_role_warnings($saved) as $warning) {
         \core\notification::warning($warning);
     }
-    redirect($returnurl, get_string('rulesaved', 'local_cepv_cohortaccess'), null,
-        \core\output\notification::NOTIFY_SUCCESS);
+    redirect(
+        $returnurl,
+        get_string('rulesaved', 'local_cepv_cohortaccess'),
+        null,
+        \core\output\notification::NOTIFY_SUCCESS
+    );
 }
 
 echo $OUTPUT->header();

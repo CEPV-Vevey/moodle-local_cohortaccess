@@ -32,20 +32,34 @@ même accès, supprimer l'une ne retire pas l'accès donné par l'autre.
 
 ## Rôle à utiliser
 
-Créer un rôle dédié, par exemple « Consultation cours », avec au minimum :
+Au CEPV, utiliser le rôle existant **« Collègue enseignant »**. Avant de créer la
+première règle, vérifier sa définition (*Administration du site → Utilisateurs →
+Permissions → Définir les rôles → Collègue enseignant*) :
 
-- `moodle/course:view` — **indispensable** pour entrer dans un cours sans y être
-  inscrit ;
-- `moodle/course:viewhiddencourses` — seulement si les cours cibles peuvent être
-  cachés.
-
-Dans la définition du rôle, cocher les types de contexte **Cours** et **Catégorie
-de cours** : seuls ces rôles sont proposés, et l'utilisateur qui crée la règle doit
-avoir le droit d'attribuer ce rôle dans le cours ou la catégorie cible
-(`moodle/role:assign` + « Autoriser l'attribution »).
+1. **Types de contexte où ce rôle peut être attribué** : cocher **Cours** et
+   **Catégorie de cours**. Sinon, le rôle n'est pas proposé dans le formulaire des
+   règles.
+2. **`moodle/course:view` = Autoriser** : **indispensable**. C'est cette capacité qui
+   permet d'entrer dans un cours sans y être inscrit.
+3. **`moodle/course:viewhiddencourses` = Autoriser** : seulement si des cours cibles
+   peuvent être cachés.
+4. **Autorisations d'attribution** (onglet *Autoriser l'attribution de rôles*) : la
+   personne qui crée les règles doit pouvoir attribuer « Collègue enseignant ». Les
+   administrateurs du site le peuvent toujours.
 
 Le plugin ne modifie jamais la définition des rôles. Il affiche un avertissement
-(non bloquant) si le rôle choisi n'a pas ces capacités.
+(non bloquant) si le rôle choisi n'a pas `moodle/course:view` (ou
+`viewhiddencourses` pour un cours caché ou une catégorie).
+
+> **Attention : le rôle donne toutes ses capacités, pas seulement la
+> consultation.** Une règle attribue le rôle dans tout le cours, ou dans tous les
+> cours de la catégorie. Si « Collègue enseignant » a des capacités d'enseignant,
+> par exemple voir les participants (`moodle/course:viewparticipants`), consulter
+> les notes (`moodle/grade:viewall`), voir les rapports d'activité ou modifier le
+> cours, les membres de la cohorte les obtiennent partout où la règle s'applique.
+> Pour une consultation pure, le rôle ne doit contenir que `moodle/course:view` (et
+> au besoin `viewhiddencourses`). Si « Collègue enseignant » sert déjà à autre
+> chose avec plus de droits, créer plutôt un rôle dédié.
 
 ## Limites (accès « visiteur »)
 
@@ -54,7 +68,8 @@ L'utilisateur n'est pas inscrit : Moodle le traite en visiteur (`is_viewing`).
 - Il voit le contenu du cours (pages, fichiers, ressources).
 - Il ne peut pas faire les activités qui exigent une inscription (tests, devoirs,
   etc.).
-- Il n'apparaît ni dans le carnet de notes ni dans la liste des participants.
+- Il n'apparaît ni dans le carnet de notes ni dans la liste des participants
+  (il peut en revanche la *voir* si le rôle a `moodle/course:viewparticipants`).
 - Le cours n'apparaît pas dans « Mes cours » ni dans le tableau de bord : il faut
   lui donner le lien direct du cours (ou de la catégorie).
 

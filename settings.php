@@ -24,10 +24,22 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-// Right after the cohort pages: admin tools such as tool_uploaduser are added to the same category before local plugins.
+// Right after the core cohort pages, whatever page follows them in this Moodle version
+// (admin tools and other core pages are added to the same category before local plugins).
+$beforesibling = null;
+if ($accounts = $ADMIN->locate('accounts')) {
+    $names = array_values(array_map(fn($child) => $child->name, $accounts->get_children()));
+    $position = array_search('cohort_customfield', $names, true);
+    if ($position === false) {
+        $position = array_search('cohorts', $names, true);
+    }
+    if ($position !== false && isset($names[$position + 1])) {
+        $beforesibling = $names[$position + 1];
+    }
+}
 $ADMIN->add('accounts', new admin_externalpage(
     'local_cohortaccess',
     new lang_string('pluginname', 'local_cohortaccess'),
     new moodle_url('/local/cohortaccess/index.php'),
     'local/cohortaccess:manage'
-), $ADMIN->locate('tooluploaduser') ? 'tooluploaduser' : null);
+), $beforesibling);

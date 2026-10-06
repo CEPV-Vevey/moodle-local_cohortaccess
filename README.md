@@ -76,7 +76,8 @@ Users are not enrolled, so Moodle treats them as viewers (`is_viewing()`):
 
 ## Administration
 
-*Site administration → Plugins → Local plugins → Cohort course access*
+*Site administration → Users → Accounts → Cohort course access* (right below
+*Cohorts*)
 
 Required capability: `local/cohortaccess:manage` (given to managers by default).
 

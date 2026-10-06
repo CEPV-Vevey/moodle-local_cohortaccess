@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Admin tree entry for local_cohortaccess.
+ * Admin tree entry for local_cohortaccess, next to the cohorts pages.
  *
  * @package    local_cohortaccess
  * @copyright  2026 CEPV, Yann Rapenne
@@ -24,9 +24,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$ADMIN->add('localplugins', new admin_externalpage(
+// Right after the cohort pages: admin tools such as tool_uploaduser are added to the same category before local plugins.
+$ADMIN->add('accounts', new admin_externalpage(
     'local_cohortaccess',
     new lang_string('pluginname', 'local_cohortaccess'),
     new moodle_url('/local/cohortaccess/index.php'),
     'local/cohortaccess:manage'
-));
+), $ADMIN->locate('tooluploaduser') ? 'tooluploaduser' : null);

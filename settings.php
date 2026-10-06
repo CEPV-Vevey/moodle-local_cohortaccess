@@ -15,18 +15,18 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Admin tree entry for local_cepv_cohortaccess.
+ * Admin tree entry for local_cohortaccess.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $ADMIN->add('localplugins', new admin_externalpage(
-    'local_cepv_cohortaccess',
-    new lang_string('pluginname', 'local_cepv_cohortaccess'),
-    new moodle_url('/local/cepv_cohortaccess/index.php'),
-    'local/cepv_cohortaccess:manage'
+    'local_cohortaccess',
+    new lang_string('pluginname', 'local_cohortaccess'),
+    new moodle_url('/local/cohortaccess/index.php'),
+    'local/cohortaccess:manage'
 ));

@@ -15,17 +15,17 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Capability definitions for local_cepv_cohortaccess.
+ * Capability definitions for local_cohortaccess.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
-    'local/cepv_cohortaccess:manage' => [
+    'local/cohortaccess:manage' => [
         'riskbitmask' => RISK_CONFIG | RISK_PERSONAL | RISK_XSS | RISK_SPAM,
         'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM,

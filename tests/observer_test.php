@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace local_cepv_cohortaccess;
+namespace local_cohortaccess;
 
 use context_course;
 use context_system;
@@ -28,8 +28,8 @@ require_once($CFG->dirroot . '/cohort/lib.php');
 /**
  * Tests for the event observers.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(observer::class)]
@@ -54,7 +54,7 @@ final class observer_test extends \advanced_testcase {
         parent::setUp();
         $this->resetAfterTest();
 
-        $this->roleid = create_role('cepvview', 'cepvview', '');
+        $this->roleid = create_role('courseviewer', 'courseviewer', '');
         assign_capability('moodle/course:view', CAP_ALLOW, $this->roleid, context_system::instance()->id);
         $this->cohort = $this->getDataGenerator()->create_cohort();
         $this->category = $this->getDataGenerator()->create_category();

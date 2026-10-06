@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace local_cepv_cohortaccess;
+namespace local_cohortaccess;
 
 use context;
 use context_course;
@@ -31,16 +31,16 @@ use stdClass;
  * itemid = rule id, so the plugin never touches manual assignments or those
  * created by other plugins. No enrolment is ever created.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manager {
     /** @var string Component used to tag role assignments. */
-    public const COMPONENT = 'local_cepv_cohortaccess';
+    public const COMPONENT = 'local_cohortaccess';
 
     /** @var string Rule table. */
-    public const TABLE = 'local_cepv_cohortaccess';
+    public const TABLE = 'local_cohortaccess';
 
     /** @var string Target type: course. */
     public const TARGET_COURSE = 'course';
@@ -283,7 +283,7 @@ class manager {
         $desc = (object) [
             'cohort' => $cohort ? format_string($cohort->name, true, ['context' => $cohort->contextid]) : '?',
             'role' => $role ? role_get_name($role, context_system::instance()) : '?',
-            'target' => get_string('targetmissing', 'local_cepv_cohortaccess'),
+            'target' => get_string('targetmissing', 'local_cohortaccess'),
             'targeturl' => null,
         ];
         if ($context = self::get_target_context($rule)) {
@@ -315,7 +315,7 @@ class manager {
         };
 
         if (!$allowed('moodle/course:view')) {
-            $warnings[] = get_string('warningnocourseview', 'local_cepv_cohortaccess');
+            $warnings[] = get_string('warningnocourseview', 'local_cohortaccess');
         }
         if ($rule->targettype === self::TARGET_CATEGORY) {
             $checkhidden = true;
@@ -324,7 +324,7 @@ class manager {
             $checkhidden = $visible !== false && !$visible;
         }
         if ($checkhidden && !$allowed('moodle/course:viewhiddencourses')) {
-            $warnings[] = get_string('warningnoviewhidden', 'local_cepv_cohortaccess');
+            $warnings[] = get_string('warningnoviewhidden', 'local_cohortaccess');
         }
         return $warnings;
     }

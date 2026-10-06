@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/cepv_cohortaccess/db" VERSION="20261005" COMMENT="XMLDB file for Moodle local/cepv_cohortaccess"
+<XMLDB PATH="local/cohortaccess/db" VERSION="20261005" COMMENT="XMLDB file for Moodle local/cohortaccess"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    <TABLE NAME="local_cepv_cohortaccess" COMMENT="Rules granting a role to cohort members in a course or category context, without enrolment">
+    <TABLE NAME="local_cohortaccess" COMMENT="Rules granting a role to cohort members in a course or category context, without enrolment">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="cohortid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Cohort whose members receive the role"/>

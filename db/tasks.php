@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Scheduled tasks for local_cepv_cohortaccess.
+ * Scheduled tasks for local_cohortaccess.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $tasks = [
     [
-        'classname' => '\local_cepv_cohortaccess\task\sync',
+        'classname' => '\local_cohortaccess\task\sync',
         'blocking' => 0,
         'minute' => 'R',
         'hour' => '*',

@@ -17,22 +17,22 @@
 /**
  * Add or edit a cohort access rule.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use local_cepv_cohortaccess\form\rule_form;
-use local_cepv_cohortaccess\manager;
+use local_cohortaccess\form\rule_form;
+use local_cohortaccess\manager;
 
 require(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
 $id = optional_param('id', 0, PARAM_INT);
 
-$url = new moodle_url('/local/cepv_cohortaccess/edit.php', $id ? ['id' => $id] : []);
-admin_externalpage_setup('local_cepv_cohortaccess', '', null, $url);
-$returnurl = new moodle_url('/local/cepv_cohortaccess/index.php');
+$url = new moodle_url('/local/cohortaccess/edit.php', $id ? ['id' => $id] : []);
+admin_externalpage_setup('local_cohortaccess', '', null, $url);
+$returnurl = new moodle_url('/local/cohortaccess/index.php');
 
 $rule = null;
 if ($id) {
@@ -41,7 +41,7 @@ if ($id) {
         throw new moodle_exception('invalidrecord', 'error', $returnurl);
     }
 }
-$title = get_string($rule ? 'editrule' : 'addrule', 'local_cepv_cohortaccess');
+$title = get_string($rule ? 'editrule' : 'addrule', 'local_cohortaccess');
 $PAGE->navbar->add($title, $url);
 $PAGE->set_title($title);
 
@@ -59,7 +59,7 @@ if ($form->is_cancelled()) {
     }
     redirect(
         $returnurl,
-        get_string('rulesaved', 'local_cepv_cohortaccess'),
+        get_string('rulesaved', 'local_cohortaccess'),
         null,
         \core\output\notification::NOTIFY_SUCCESS
     );

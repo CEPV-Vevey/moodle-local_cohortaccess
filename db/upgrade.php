@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Upgrade steps for local_cepv_cohortaccess.
+ * Upgrade steps for local_cohortaccess.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -28,6 +28,6 @@
  * @param int $oldversion The version we are upgrading from.
  * @return bool
  */
-function xmldb_local_cepv_cohortaccess_upgrade($oldversion) {
+function xmldb_local_cohortaccess_upgrade($oldversion) {
     return true;
 }

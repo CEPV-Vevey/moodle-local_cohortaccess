@@ -15,16 +15,16 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Version information for local_cepv_cohortaccess.
+ * Version information for local_cohortaccess.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_cepv_cohortaccess';
+$plugin->component = 'local_cohortaccess';
 $plugin->version = 2026100600;
 $plugin->requires = 2025041400;
 $plugin->supported = [500, 501];

@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace local_cepv_cohortaccess\task;
+namespace local_cohortaccess\task;
 
 use context_course;
 use context_system;
-use local_cepv_cohortaccess\manager;
+use local_cohortaccess\manager;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -28,8 +28,8 @@ require_once($CFG->dirroot . '/cohort/lib.php');
 /**
  * Tests for the synchronisation scheduled task.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(sync::class)]
@@ -43,7 +43,7 @@ final class sync_test extends \advanced_testcase {
     public function test_execute_repairs_drift_and_is_idempotent(): void {
         global $DB;
         $this->resetAfterTest();
-        $roleid = create_role('cepvview', 'cepvview', '');
+        $roleid = create_role('courseviewer', 'courseviewer', '');
         assign_capability('moodle/course:view', CAP_ALLOW, $roleid, context_system::instance()->id);
         $cohort = $this->getDataGenerator()->create_cohort();
         $user = $this->getDataGenerator()->create_user();

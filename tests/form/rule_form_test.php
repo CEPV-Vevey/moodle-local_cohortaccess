@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace local_cepv_cohortaccess\form;
+namespace local_cohortaccess\form;
 
-use local_cepv_cohortaccess\manager;
+use local_cohortaccess\manager;
 use stdClass;
 
 /**
  * Tests for the rule form.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(rule_form::class)]
@@ -43,7 +43,7 @@ final class rule_form_test extends \advanced_testcase {
         $this->setAdminUser();
         $this->cohort = $this->getDataGenerator()->create_cohort();
         $this->course = $this->getDataGenerator()->create_course();
-        $this->roleid = create_role('cepvview', 'cepvview', '');
+        $this->roleid = create_role('courseviewer', 'courseviewer', '');
         set_role_contextlevels($this->roleid, [CONTEXT_COURSE, CONTEXT_COURSECAT]);
     }
 
@@ -104,7 +104,7 @@ final class rule_form_test extends \advanced_testcase {
             'roleid' => $this->roleid, 'enabled' => 1]);
 
         [, $errors] = $this->submit(['courseid' => $this->course->id]);
-        $this->assertEquals(get_string('duplicaterule', 'local_cepv_cohortaccess'), $errors['cohortid']);
+        $this->assertEquals(get_string('duplicaterule', 'local_cohortaccess'), $errors['cohortid']);
 
         [$rule, $errors] = $this->submit(['courseid' => $this->course->id, 'enabled' => 0], $existing);
         $this->assertEmpty($errors);
@@ -127,7 +127,7 @@ final class rule_form_test extends \advanced_testcase {
         $syscontext = \context_system::instance();
         $coordinator = create_role('coordinator', 'coordinator', '');
         set_role_contextlevels($coordinator, [CONTEXT_SYSTEM]);
-        assign_capability('local/cepv_cohortaccess:manage', CAP_ALLOW, $coordinator, $syscontext->id);
+        assign_capability('local/cohortaccess:manage', CAP_ALLOW, $coordinator, $syscontext->id);
         assign_capability('moodle/role:assign', CAP_ALLOW, $coordinator, $syscontext->id);
         core_role_set_assign_allowed($coordinator, $this->roleid);
         $user = $this->getDataGenerator()->create_user();

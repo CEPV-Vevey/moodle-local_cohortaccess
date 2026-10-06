@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace local_cepv_cohortaccess\privacy;
+namespace local_cohortaccess\privacy;
 
 /**
  * Privacy provider: the plugin stores no personal data.
@@ -22,8 +22,8 @@ namespace local_cepv_cohortaccess\privacy;
  * Rules only reference cohorts, roles and courses/categories. Role assignments
  * created by the plugin are stored and exported by core_role.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements \core_privacy\local\metadata\null_provider {

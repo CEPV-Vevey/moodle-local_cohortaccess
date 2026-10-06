@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace local_cepv_cohortaccess\form;
+namespace local_cohortaccess\form;
 
 use context_system;
 use core_course_category;
-use local_cepv_cohortaccess\manager;
+use local_cohortaccess\manager;
 use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
@@ -30,8 +30,8 @@ require_once($CFG->libdir . '/formslib.php');
  *
  * Custom data: 'rule' => stdClass|null, the rule being edited.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class rule_form extends \moodleform {
@@ -44,25 +44,25 @@ class rule_form extends \moodleform {
         $mform->addElement('hidden', 'id', 0);
         $mform->setType('id', PARAM_INT);
 
-        $mform->addElement('cohort', 'cohortid', get_string('cohort', 'local_cepv_cohortaccess'), [
+        $mform->addElement('cohort', 'cohortid', get_string('cohort', 'local_cohortaccess'), [
             'contextid' => context_system::instance()->id,
             'includes' => 'all',
         ]);
         $mform->addRule('cohortid', null, 'required', null, 'client');
 
-        $mform->addElement('select', 'targettype', get_string('targettype', 'local_cepv_cohortaccess'), [
-            manager::TARGET_COURSE => get_string('targetcourse', 'local_cepv_cohortaccess'),
-            manager::TARGET_CATEGORY => get_string('targetcategory', 'local_cepv_cohortaccess'),
+        $mform->addElement('select', 'targettype', get_string('targettype', 'local_cohortaccess'), [
+            manager::TARGET_COURSE => get_string('targetcourse', 'local_cohortaccess'),
+            manager::TARGET_CATEGORY => get_string('targetcategory', 'local_cohortaccess'),
         ]);
         $mform->setDefault('targettype', manager::TARGET_COURSE);
 
-        $mform->addElement('course', 'courseid', get_string('targetcourse', 'local_cepv_cohortaccess'));
+        $mform->addElement('course', 'courseid', get_string('targetcourse', 'local_cohortaccess'));
         $mform->hideIf('courseid', 'targettype', 'neq', manager::TARGET_COURSE);
 
         $mform->addElement(
             'autocomplete',
             'categoryid',
-            get_string('targetcategory', 'local_cepv_cohortaccess'),
+            get_string('targetcategory', 'local_cohortaccess'),
             ['' => ''] + core_course_category::make_categories_list()
         );
         $mform->hideIf('categoryid', 'targettype', 'neq', manager::TARGET_CATEGORY);
@@ -77,10 +77,10 @@ class rule_form extends \moodleform {
             role_fix_names(get_all_roles(), context_system::instance(), ROLENAME_ORIGINAL, true),
             array_flip($roleids)
         );
-        $mform->addElement('autocomplete', 'roleid', get_string('role', 'local_cepv_cohortaccess'), ['' => ''] + $roles);
+        $mform->addElement('autocomplete', 'roleid', get_string('role', 'local_cohortaccess'), ['' => ''] + $roles);
         $mform->addRule('roleid', null, 'required', null, 'client');
 
-        $mform->addElement('advcheckbox', 'enabled', get_string('enabled', 'local_cepv_cohortaccess'));
+        $mform->addElement('advcheckbox', 'enabled', get_string('enabled', 'local_cohortaccess'));
         $mform->setDefault('enabled', 1);
 
         $this->add_action_buttons();
@@ -145,10 +145,10 @@ class rule_form extends \moodleform {
         }
 
         if (!$errors && !$this->is_role_allowed($rule)) {
-            $errors['roleid'] = get_string('rolenotassignable', 'local_cepv_cohortaccess');
+            $errors['roleid'] = get_string('rolenotassignable', 'local_cohortaccess');
         }
         if (!$errors && manager::rule_exists($rule, $rule->id)) {
-            $errors['cohortid'] = get_string('duplicaterule', 'local_cepv_cohortaccess');
+            $errors['cohortid'] = get_string('duplicaterule', 'local_cohortaccess');
         }
         return $errors;
     }

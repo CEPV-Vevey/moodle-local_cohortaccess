@@ -17,12 +17,12 @@
 /**
  * List of cohort access rules and rule actions.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use local_cepv_cohortaccess\manager;
+use local_cohortaccess\manager;
 
 require(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
@@ -30,8 +30,8 @@ require_once($CFG->libdir . '/adminlib.php');
 $action = optional_param('action', '', PARAM_ALPHA);
 $id = optional_param('id', 0, PARAM_INT);
 
-admin_externalpage_setup('local_cepv_cohortaccess');
-$baseurl = new moodle_url('/local/cepv_cohortaccess/index.php');
+admin_externalpage_setup('local_cohortaccess');
+$baseurl = new moodle_url('/local/cohortaccess/index.php');
 
 if ($action) {
     $rule = manager::get_rule($id);
@@ -43,7 +43,7 @@ if ($action) {
             echo $OUTPUT->header();
             $confirmurl = new moodle_url($baseurl, ['action' => 'delete', 'id' => $id, 'confirm' => 1]);
             echo $OUTPUT->confirm(
-                get_string('confirmdelete', 'local_cepv_cohortaccess', manager::describe_rule($rule)),
+                get_string('confirmdelete', 'local_cohortaccess', manager::describe_rule($rule)),
                 new single_button($confirmurl, get_string('delete'), 'post', single_button::BUTTON_DANGER),
                 $baseurl
             );
@@ -52,7 +52,7 @@ if ($action) {
         }
         require_sesskey();
         manager::delete_rule($id);
-        redirect($baseurl, get_string('ruledeleted', 'local_cepv_cohortaccess'), null, \core\output\notification::NOTIFY_SUCCESS);
+        redirect($baseurl, get_string('ruledeleted', 'local_cohortaccess'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
     require_sesskey();
     if ($action === 'enable' || $action === 'disable') {
@@ -64,36 +64,36 @@ if ($action) {
     }
     redirect(
         $baseurl,
-        get_string('syncresult', 'local_cepv_cohortaccess', (object) $result),
+        get_string('syncresult', 'local_cohortaccess', (object) $result),
         null,
         \core\output\notification::NOTIFY_SUCCESS
     );
 }
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('pluginname', 'local_cepv_cohortaccess'));
+echo $OUTPUT->heading(get_string('pluginname', 'local_cohortaccess'));
 echo $OUTPUT->single_button(
-    new moodle_url('/local/cepv_cohortaccess/edit.php'),
-    get_string('addrule', 'local_cepv_cohortaccess'),
+    new moodle_url('/local/cohortaccess/edit.php'),
+    get_string('addrule', 'local_cohortaccess'),
     'get',
     ['type' => single_button::BUTTON_PRIMARY]
 );
 
 $rules = manager::get_rules();
 if (!$rules) {
-    echo $OUTPUT->notification(get_string('norules', 'local_cepv_cohortaccess'), 'info', false);
+    echo $OUTPUT->notification(get_string('norules', 'local_cohortaccess'), 'info', false);
     echo $OUTPUT->footer();
     die();
 }
 
 $table = new html_table();
 $table->head = [
-    get_string('cohort', 'local_cepv_cohortaccess'),
-    get_string('target', 'local_cepv_cohortaccess'),
-    get_string('role', 'local_cepv_cohortaccess'),
-    get_string('members', 'local_cepv_cohortaccess'),
-    get_string('status', 'local_cepv_cohortaccess'),
-    get_string('actions', 'local_cepv_cohortaccess'),
+    get_string('cohort', 'local_cohortaccess'),
+    get_string('target', 'local_cohortaccess'),
+    get_string('role', 'local_cohortaccess'),
+    get_string('members', 'local_cohortaccess'),
+    get_string('status', 'local_cohortaccess'),
+    get_string('actions', 'local_cohortaccess'),
 ];
 $table->attributes['class'] = 'generaltable';
 foreach ($rules as $rule) {
@@ -101,16 +101,16 @@ foreach ($rules as $rule) {
     $target = $desc->targeturl ? html_writer::link($desc->targeturl, $desc->target) : $desc->target;
 
     $members = manager::count_members($rule->cohortid) . html_writer::div(
-        get_string('assignments', 'local_cepv_cohortaccess', manager::count_assignments($rule->id)),
+        get_string('assignments', 'local_cohortaccess', manager::count_assignments($rule->id)),
         'small text-muted'
     );
 
     $status = $rule->enabled
-        ? html_writer::span(get_string('enabled', 'local_cepv_cohortaccess'), 'badge bg-success text-white')
-        : html_writer::span(get_string('disabled', 'local_cepv_cohortaccess'), 'badge bg-secondary text-white');
+        ? html_writer::span(get_string('enabled', 'local_cohortaccess'), 'badge bg-success text-white')
+        : html_writer::span(get_string('disabled', 'local_cohortaccess'), 'badge bg-secondary text-white');
     $warnings = manager::get_role_warnings($rule);
     if (!$desc->targeturl) {
-        $warnings[] = get_string('targetmissing', 'local_cepv_cohortaccess');
+        $warnings[] = get_string('targetmissing', 'local_cohortaccess');
     }
     if ($warnings) {
         $status .= ' ' . $OUTPUT->pix_icon('i/warning', implode(' ', $warnings));
@@ -120,13 +120,13 @@ foreach ($rules as $rule) {
         'sesskey' => sesskey()]);
     $actions = [
         html_writer::link(
-            new moodle_url('/local/cepv_cohortaccess/edit.php', ['id' => $rule->id]),
+            new moodle_url('/local/cohortaccess/edit.php', ['id' => $rule->id]),
             get_string('edit')
         ),
         $rule->enabled
-            ? html_writer::link($actionurl('disable'), get_string('disable', 'local_cepv_cohortaccess'))
-            : html_writer::link($actionurl('enable'), get_string('enable', 'local_cepv_cohortaccess')),
-        html_writer::link($actionurl('sync'), get_string('sync', 'local_cepv_cohortaccess')),
+            ? html_writer::link($actionurl('disable'), get_string('disable', 'local_cohortaccess'))
+            : html_writer::link($actionurl('enable'), get_string('enable', 'local_cohortaccess')),
+        html_writer::link($actionurl('sync'), get_string('sync', 'local_cohortaccess')),
         html_writer::link(new moodle_url($baseurl, ['action' => 'delete', 'id' => $rule->id]), get_string('delete')),
     ];
 

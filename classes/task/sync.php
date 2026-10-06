@@ -14,17 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace local_cepv_cohortaccess\task;
+namespace local_cohortaccess\task;
 
-use local_cepv_cohortaccess\manager;
+use local_cohortaccess\manager;
 
 /**
  * Hourly full synchronisation of the rules' role assignments.
  *
  * Catches up with changes made without events (e.g. direct database edits).
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class sync extends \core\task\scheduled_task {
@@ -34,13 +34,13 @@ class sync extends \core\task\scheduled_task {
      * @return string
      */
     public function get_name(): string {
-        return get_string('tasksync', 'local_cepv_cohortaccess');
+        return get_string('tasksync', 'local_cohortaccess');
     }
 
     /**
      * Synchronise all rules.
      */
     public function execute(): void {
-        mtrace(get_string('syncresult', 'local_cepv_cohortaccess', (object) manager::sync_all()));
+        mtrace(get_string('syncresult', 'local_cohortaccess', (object) manager::sync_all()));
     }
 }

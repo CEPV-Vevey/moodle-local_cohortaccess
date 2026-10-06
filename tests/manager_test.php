@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace local_cepv_cohortaccess;
+namespace local_cohortaccess;
 
 use context_course;
 use context_coursecat;
@@ -29,8 +29,8 @@ require_once($CFG->dirroot . '/cohort/lib.php');
 /**
  * Tests for the rule manager.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(manager::class)]
@@ -51,7 +51,7 @@ final class manager_test extends \advanced_testcase {
         parent::setUp();
         $this->resetAfterTest();
 
-        $this->roleid = $this->create_view_role('cepvview');
+        $this->roleid = $this->create_view_role('courseviewer');
         $this->cohort = $this->getDataGenerator()->create_cohort();
         for ($i = 0; $i < 3; $i++) {
             $user = $this->getDataGenerator()->create_user();
@@ -182,7 +182,7 @@ final class manager_test extends \advanced_testcase {
         $oldcontext = context_course::instance($this->course->id);
         $newcourse = $this->getDataGenerator()->create_course();
         $newcontext = context_course::instance($newcourse->id);
-        $newroleid = $this->create_view_role('cepvview2');
+        $newroleid = $this->create_view_role('courseviewer2');
 
         $rule->targetid = $newcourse->id;
         $rule->roleid = $newroleid;
@@ -300,23 +300,23 @@ final class manager_test extends \advanced_testcase {
         $this->assertEquals(format_string("Cours d'été & co"), $desc->cohort);
         $this->assertStringNotContainsString('&amp;amp;', $desc->target);
         $this->assertStringNotContainsString('<b>', $desc->target);
-        $this->assertEquals('cepvview', $desc->role);
+        $this->assertEquals('courseviewer', $desc->role);
         $this->assertEquals(new \moodle_url('/course/view.php', ['id' => $this->course->id]), $desc->targeturl);
 
         $rule->targetid += 1000;
         $desc = manager::describe_rule($rule);
         $this->assertNull($desc->targeturl);
-        $this->assertEquals(get_string('targetmissing', 'local_cepv_cohortaccess'), $desc->target);
+        $this->assertEquals(get_string('targetmissing', 'local_cohortaccess'), $desc->target);
     }
 
     public function test_uninstall_removes_only_plugin_assignments(): void {
         global $CFG, $DB;
-        require_once($CFG->dirroot . '/local/cepv_cohortaccess/db/uninstall.php');
+        require_once($CFG->dirroot . '/local/cohortaccess/db/uninstall.php');
         $context = context_course::instance($this->course->id);
         role_assign($this->roleid, $this->members[0]->id, $context->id);
         $this->create_course_rule();
 
-        xmldb_local_cepv_cohortaccess_uninstall();
+        xmldb_local_cohortaccess_uninstall();
 
         $this->assertEquals(0, $DB->count_records('role_assignments', ['component' => manager::COMPONENT]));
         $this->assertTrue(user_has_role_assignment($this->members[0]->id, $this->roleid, $context->id));
@@ -328,14 +328,14 @@ final class manager_test extends \advanced_testcase {
         $noviewrole = create_role('noview', 'noview', '');
         $rule = $this->create_course_rule(['roleid' => $noviewrole]);
         $this->assertContains(
-            get_string('warningnocourseview', 'local_cepv_cohortaccess'),
+            get_string('warningnocourseview', 'local_cohortaccess'),
             manager::get_role_warnings($rule)
         );
 
         $hidden = $this->getDataGenerator()->create_course(['visible' => 0]);
         $rule = $this->create_course_rule(['targetid' => $hidden->id]);
         $this->assertEquals(
-            [get_string('warningnoviewhidden', 'local_cepv_cohortaccess')],
+            [get_string('warningnoviewhidden', 'local_cohortaccess')],
             manager::get_role_warnings($rule)
         );
 

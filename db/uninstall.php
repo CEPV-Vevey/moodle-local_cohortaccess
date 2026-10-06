@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Uninstall hook for local_cepv_cohortaccess.
+ * Uninstall hook for local_cohortaccess.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,7 +27,7 @@
  *
  * @return bool
  */
-function xmldb_local_cepv_cohortaccess_uninstall() {
-    role_unassign_all(['component' => 'local_cepv_cohortaccess']);
+function xmldb_local_cohortaccess_uninstall() {
+    role_unassign_all(['component' => 'local_cohortaccess']);
     return true;
 }

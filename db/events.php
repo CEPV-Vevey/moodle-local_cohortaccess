@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Event observers for local_cepv_cohortaccess.
+ * Event observers for local_cohortaccess.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,26 +27,26 @@ defined('MOODLE_INTERNAL') || die();
 $observers = [
     [
         'eventname' => '\core\event\cohort_member_added',
-        'callback' => '\local_cepv_cohortaccess\observer::cohort_member_added',
+        'callback' => '\local_cohortaccess\observer::cohort_member_added',
     ],
     [
         'eventname' => '\core\event\cohort_member_removed',
-        'callback' => '\local_cepv_cohortaccess\observer::cohort_member_removed',
+        'callback' => '\local_cohortaccess\observer::cohort_member_removed',
     ],
     [
         'eventname' => '\core\event\cohort_deleted',
-        'callback' => '\local_cepv_cohortaccess\observer::cohort_deleted',
+        'callback' => '\local_cohortaccess\observer::cohort_deleted',
     ],
     [
         'eventname' => '\core\event\course_deleted',
-        'callback' => '\local_cepv_cohortaccess\observer::course_deleted',
+        'callback' => '\local_cohortaccess\observer::course_deleted',
     ],
     [
         'eventname' => '\core\event\course_category_deleted',
-        'callback' => '\local_cepv_cohortaccess\observer::course_category_deleted',
+        'callback' => '\local_cohortaccess\observer::course_category_deleted',
     ],
     [
         'eventname' => '\core\event\role_deleted',
-        'callback' => '\local_cepv_cohortaccess\observer::role_deleted',
+        'callback' => '\local_cohortaccess\observer::role_deleted',
     ],
 ];

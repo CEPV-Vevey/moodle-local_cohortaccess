@@ -1,123 +1,137 @@
-# Accès aux cours par cohorte (`local_cepv_cohortaccess`)
+# Cohort course access (`local_cohortaccess`)
 
-Plugin local Moodle (5.0, compatible 5.1) qui donne aux membres d'une cohorte un
-accès **en consultation** à un cours, ou à tous les cours d'une catégorie,
-**sans les inscrire**.
+A Moodle local plugin that gives the members of a cohort **view access** to a
+course, or to every course of a category, **without enrolling them**.
 
-Le plugin attribue un rôle Moodle (`role_assignments`) dans le contexte du cours
-ou de la catégorie. Il ne crée jamais d'inscription (`user_enrolments`).
+The plugin assigns a role (`role_assignments`) to the cohort members in the
+course or category context. It never creates enrolments (`user_enrolments`).
 
-## Fonctionnement
+Requires Moodle 5.0 or later (tested on 5.0 and 5.1).
 
-Une **règle** associe : une cohorte, une cible (cours ou catégorie), un rôle, un
-état (activée / désactivée).
+## How it works
 
-- À la création ou à l'activation d'une règle, chaque membre de la cohorte reçoit
-  le rôle dans le contexte cible.
-- Ajout / retrait d'un membre de la cohorte : le rôle est attribué / retiré
-  immédiatement (observateurs d'événements).
-- Modification d'une règle (autre cible, autre rôle) : les anciennes attributions
-  sont retirées, les nouvelles créées.
-- Désactivation : toutes les attributions de la règle sont retirées ;
-  réactivation : elles sont recréées.
-- Suppression d'une cohorte, d'un cours, d'une catégorie ou d'un rôle : les règles
-  concernées sont supprimées avec leurs attributions.
-- Une tâche planifiée (`\local_cepv_cohortaccess\task\sync`, toutes les heures)
-  resynchronise toutes les règles et corrige les écarts.
+A **rule** links a cohort, a target (course or course category), a role and a
+state (enabled / disabled).
 
-Chaque attribution créée par le plugin porte `component = local_cepv_cohortaccess`
-et `itemid = <id de la règle>`. Le plugin ne retire **jamais** une attribution
-manuelle ni une attribution créée par un autre plugin. Si deux règles donnent le
-même accès, supprimer l'une ne retire pas l'accès donné par l'autre.
+- When a rule is created or enabled, every cohort member gets the role in the
+  target context.
+- When a user joins or leaves the cohort, the role is assigned or removed
+  immediately (event observers).
+- When a rule is edited (other target, other role), the old assignments are
+  removed and the new ones created.
+- Disabling a rule removes all its assignments; enabling it again restores them.
+- When a cohort, course, category or role is deleted, the rules using it are
+  deleted together with their assignments.
+- A scheduled task (`\local_cohortaccess\task\sync`, hourly) resynchronises all
+  rules and repairs any drift, including assignments left by deleted rules.
 
-## Rôle à utiliser
+Every role assignment created by the plugin has
+`component = local_cohortaccess` and `itemid = <rule id>`. The plugin **never**
+removes a manual role assignment or one created by another plugin. When two
+rules grant the same access, deleting one of them keeps the access granted by
+the other.
 
-Au CEPV, utiliser le rôle existant **« Collègue enseignant »**. Avant de créer la
-première règle, vérifier sa définition (*Administration du site → Utilisateurs →
-Permissions → Définir les rôles → Collègue enseignant*) :
+## Setting up the role
 
-1. **Types de contexte où ce rôle peut être attribué** : cocher **Cours** et
-   **Catégorie de cours**. Sinon, le rôle n'est pas proposé dans le formulaire des
-   règles.
-2. **`moodle/course:view` = Autoriser** : **indispensable**. C'est cette capacité qui
-   permet d'entrer dans un cours sans y être inscrit.
-3. **`moodle/course:viewhiddencourses` = Autoriser** : seulement si des cours cibles
-   peuvent être cachés.
-4. **Autorisations d'attribution** (onglet *Autoriser l'attribution de rôles*) : la
-   personne qui crée les règles doit pouvoir attribuer « Collègue enseignant ». Les
-   administrateurs du site le peuvent toujours.
+Use a dedicated role (for example "Course viewer"), or an existing one that
+fits. Check its definition in *Site administration → Users → Permissions →
+Define roles*:
 
-Le plugin ne modifie jamais la définition des rôles. Il affiche un avertissement
-(non bloquant) si le rôle choisi n'a pas `moodle/course:view` (ou
-`viewhiddencourses` pour un cours caché ou une catégorie).
+1. **Context types where this role may be assigned**: tick **Course** and
+   **Category**. Other roles are not offered in the rule form.
+2. **`moodle/course:view` = Allow**: **required**. This is what lets a user enter
+   a course without being enrolled.
+3. **`moodle/course:viewhiddencourses` = Allow**: only if target courses may be
+   hidden.
+4. **Allow role assignments**: the person creating rules must be allowed to
+   assign the role in the target course or category. Site administrators always
+   can.
 
-> **Attention : le rôle donne toutes ses capacités, pas seulement la
-> consultation.** Une règle attribue le rôle dans tout le cours, ou dans tous les
-> cours de la catégorie. Si « Collègue enseignant » a des capacités d'enseignant,
-> par exemple voir les participants (`moodle/course:viewparticipants`), consulter
-> les notes (`moodle/grade:viewall`), voir les rapports d'activité ou modifier le
-> cours, les membres de la cohorte les obtiennent partout où la règle s'applique.
-> Pour une consultation pure, le rôle ne doit contenir que `moodle/course:view` (et
-> au besoin `viewhiddencourses`). Si « Collègue enseignant » sert déjà à autre
-> chose avec plus de droits, créer plutôt un rôle dédié.
+The plugin never changes role definitions. It shows a non-blocking warning when
+the chosen role lacks `moodle/course:view` (or `viewhiddencourses` for a hidden
+course or a category).
 
-## Limites (accès « visiteur »)
+> **Warning: a rule grants every capability of the role, not just viewing.**
+> The role is assigned in the whole course, or in every course of the category.
+> If the role has teacher-like capabilities, such as seeing participants
+> (`moodle/course:viewparticipants`), viewing grades (`moodle/grade:viewall`),
+> viewing reports or editing the course, cohort members get them wherever the
+> rule applies. For view-only access, the role should only contain
+> `moodle/course:view` (and `viewhiddencourses` if needed).
 
-L'utilisateur n'est pas inscrit : Moodle le traite en visiteur (`is_viewing`).
+## Limitations ("viewing" access)
 
-- Il voit le contenu du cours (pages, fichiers, ressources).
-- Il ne peut pas faire les activités qui exigent une inscription (tests, devoirs,
-  etc.).
-- Il n'apparaît ni dans le carnet de notes ni dans la liste des participants
-  (il peut en revanche la *voir* si le rôle a `moodle/course:viewparticipants`).
-- Le cours n'apparaît pas dans « Mes cours » ni dans le tableau de bord : il faut
-  lui donner le lien direct du cours (ou de la catégorie).
+Users are not enrolled, so Moodle treats them as viewers (`is_viewing()`):
+
+- They can see the course content (pages, files, resources).
+- They cannot take part in activities that require enrolment (quizzes,
+  assignments, etc.).
+- They are not in the gradebook nor in the participants list (they can however
+  *see* that list if the role has `moodle/course:viewparticipants`).
+- The course does not show up in "My courses" or on the dashboard: give them the
+  direct link to the course or category.
+- If a cohort member is also enrolled in a target course and loses their last
+  enrolment, Moodle core removes all their role assignments in that course,
+  including the plugin's one. The scheduled task restores it within the hour.
 
 ## Administration
 
-`Administration du site → Plugins → Plugins locaux → Accès aux cours par cohorte`
+*Site administration → Plugins → Local plugins → Cohort course access*
 
-Capacité requise : `local/cepv_cohortaccess:manage` (attribuée par défaut aux
-gestionnaires).
+Required capability: `local/cohortaccess:manage` (given to managers by default).
 
-La liste affiche pour chaque règle : cohorte, cible, rôle, nombre de membres et
-d'attributions actives, état (avec ⚠ si le rôle manque d'une capacité ou si la
-cible n'existe plus) et les actions Modifier / Activer-Désactiver / Synchroniser /
-Supprimer.
+The list shows, for each rule: cohort, target, role, number of members and of
+active role assignments, status (with a ⚠ when the role lacks a capability or
+the target no longer exists), and the actions Edit / Enable-Disable /
+Synchronise / Delete.
 
 ## Installation
 
-1. Copier le dépôt dans `local/cepv_cohortaccess` (Moodle 5.1 :
-   `public/local/cepv_cohortaccess`).
-2. `Administration du site → Notifications` (ou `php admin/cli/upgrade.php`).
+- **From a release**: download `local_cohortaccess-<version>.zip` from the
+  [GitHub releases](https://github.com/CEPV-Vevey/moodle-local_cohortaccess/releases),
+  then use *Site administration → Plugins → Install plugins*. Alternatively,
+  unzip it into `local/` (`public/local/` on Moodle 5.1+) so that the plugin ends
+  up in `local/cohortaccess`.
+- **From git**: clone the repository into `local/cohortaccess`.
 
-Synchronisation manuelle :
+Then visit *Site administration → Notifications* (or run
+`php admin/cli/upgrade.php`).
+
+Manual synchronisation:
 
 ```
-php admin/cli/scheduled_task.php --execute='\local_cepv_cohortaccess\task\sync'
+php admin/cli/scheduled_task.php --execute='\local_cohortaccess\task\sync'
 ```
 
-## Désinstallation
+## Uninstalling
 
-La désinstallation retire toutes les attributions de rôle créées par le plugin.
-Les attributions manuelles sont conservées.
+Uninstalling removes every role assignment created by the plugin. Manual role
+assignments are kept.
 
-## Développement
+## Development
 
-Tests PHPUnit :
+PHPUnit:
 
 ```
 php admin/tool/phpunit/cli/init.php
-vendor/bin/phpunit --testsuite local_cepv_cohortaccess_testsuite
+vendor/bin/phpunit --testsuite local_cohortaccess_testsuite
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) exécute moodle-plugin-ci (phplint,
-phpcs, phpdoc, validate, savepoints, mustache, phpunit) sur Moodle 5.0 et 5.1.
+GitHub Actions runs moodle-plugin-ci (phplint, phpcs, phpdoc, validate,
+savepoints, mustache, phpunit) on Moodle 5.0 and 5.1.
 
-Note : en local, ne pas installer le plugin par lien symbolique pour un test web
-(les pages utilisent `__DIR__ . '/../../config.php'`) — copier ou utiliser un
-`mount --bind`.
+Releasing: bump `$plugin->version` and `$plugin->release` in `version.php`,
+commit, then push a matching tag (`release = '0.2.0'` → tag `v0.2.0`). The
+release workflow checks the tag, builds the installable zip and attaches it to a
+GitHub release.
 
-## Licence
+Note: for local web testing, do not install the plugin through a symbolic link
+(pages use `__DIR__ . '/../../config.php'`); copy it or use a bind mount.
 
-GNU GPL v3 ou ultérieure.
+## Credits
+
+Developed by Yann Rapenne for the CEPV.
+
+## License
+
+GNU GPL v3 or later. See <https://www.gnu.org/licenses/gpl-3.0.html>.

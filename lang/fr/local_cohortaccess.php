@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * French strings for local_cepv_cohortaccess.
+ * French strings for local_cohortaccess.
  *
- * @package    local_cepv_cohortaccess
- * @copyright  2026 CEPV
+ * @package    local_cohortaccess
+ * @copyright  2026 CEPV, Yann Rapenne
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,8 +27,8 @@ defined('MOODLE_INTERNAL') || die();
 $string['actions'] = 'Actions';
 $string['addrule'] = 'Ajouter une règle';
 $string['assignments'] = '{$a} attributions de rôle actives';
-$string['cepv_cohortaccess:manage'] = 'Gérer les règles d\'accès aux cours par cohorte';
 $string['cohort'] = 'Cohorte';
+$string['cohortaccess:manage'] = 'Gérer les règles d\'accès aux cours par cohorte';
 $string['confirmdelete'] = 'Supprimer la règle donnant à la cohorte « {$a->cohort} » le rôle « {$a->role} » dans « {$a->target} » ? Toutes les attributions de rôle créées par cette règle seront retirées.';
 $string['disable'] = 'Désactiver';
 $string['disabled'] = 'Désactivée';

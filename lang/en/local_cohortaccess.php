@@ -25,13 +25,12 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['actions'] = 'Actions';
+$string['activeassignments'] = 'Active role assignments: {$a}';
 $string['addrule'] = 'Add a rule';
-$string['assignments'] = '{$a} active role assignments';
 $string['cohort'] = 'Cohort';
 $string['cohortaccess:manage'] = 'Manage cohort course access rules';
 $string['confirmdelete'] = 'Delete the rule giving cohort "{$a->cohort}" the role "{$a->role}" in "{$a->target}"? All role assignments created by this rule will be removed.';
 $string['disable'] = 'Disable';
-$string['disabled'] = 'Disabled';
 $string['duplicaterule'] = 'A rule with the same cohort, target and role already exists.';
 $string['editrule'] = 'Edit rule';
 $string['enable'] = 'Enable';
@@ -44,7 +43,6 @@ $string['role'] = 'Role';
 $string['rolenotassignable'] = 'You are not allowed to assign this role in this course or category.';
 $string['ruledeleted'] = 'Rule deleted.';
 $string['rulesaved'] = 'Rule saved.';
-$string['status'] = 'Status';
 $string['sync'] = 'Synchronise';
 $string['syncresult'] = 'Synchronisation done: {$a->added} role assignments added, {$a->removed} removed.';
 $string['target'] = 'Course / category';

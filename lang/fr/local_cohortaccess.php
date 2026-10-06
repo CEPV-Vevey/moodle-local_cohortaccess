@@ -25,13 +25,12 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['actions'] = 'Actions';
+$string['activeassignments'] = 'Attributions de rôle actives : {$a}';
 $string['addrule'] = 'Ajouter une règle';
-$string['assignments'] = '{$a} attributions de rôle actives';
 $string['cohort'] = 'Cohorte';
 $string['cohortaccess:manage'] = 'Gérer les règles d\'accès aux cours par cohorte';
 $string['confirmdelete'] = 'Supprimer la règle donnant à la cohorte « {$a->cohort} » le rôle « {$a->role} » dans « {$a->target} » ? Toutes les attributions de rôle créées par cette règle seront retirées.';
 $string['disable'] = 'Désactiver';
-$string['disabled'] = 'Désactivée';
 $string['duplicaterule'] = 'Une règle avec la même cohorte, la même cible et le même rôle existe déjà.';
 $string['editrule'] = 'Modifier la règle';
 $string['enable'] = 'Activer';
@@ -44,7 +43,6 @@ $string['role'] = 'Rôle';
 $string['rolenotassignable'] = 'Vous n\'êtes pas autorisé à attribuer ce rôle dans ce cours ou cette catégorie.';
 $string['ruledeleted'] = 'Règle supprimée.';
 $string['rulesaved'] = 'Règle enregistrée.';
-$string['status'] = 'État';
 $string['sync'] = 'Synchroniser';
 $string['syncresult'] = 'Synchronisation terminée : {$a->added} attributions de rôle ajoutées, {$a->removed} retirées.';
 $string['target'] = 'Cours / catégorie';

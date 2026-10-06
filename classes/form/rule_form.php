@@ -39,15 +39,24 @@ class rule_form extends \moodleform {
      * Form definition.
      */
     protected function definition(): void {
+        global $DB;
         $mform = $this->_form;
 
         $mform->addElement('hidden', 'id', 0);
         $mform->setType('id', PARAM_INT);
 
-        $mform->addElement('cohort', 'cohortid', get_string('cohort', 'local_cohortaccess'), [
+        $cohortelement = $mform->addElement('cohort', 'cohortid', get_string('cohort', 'local_cohortaccess'), [
             'contextid' => context_system::instance()->id,
             'includes' => 'all',
         ]);
+        // The core element only pre-fills cohorts of the system context (or its parents):
+        // add the edited rule's cohort explicitly so that category cohorts are shown too.
+        if (!empty($this->_customdata['rule'])) {
+            $cohort = $DB->get_record('cohort', ['id' => $this->_customdata['rule']->cohortid]);
+            if ($cohort) {
+                $cohortelement->addOption(format_string($cohort->name, true, ['context' => $cohort->contextid]), $cohort->id);
+            }
+        }
         $mform->addRule('cohortid', null, 'required', null, 'client');
 
         $mform->addElement('select', 'targettype', get_string('targettype', 'local_cohortaccess'), [

@@ -156,6 +156,37 @@ final class rule_form_test extends \advanced_testcase {
         $this->assertEquals(0, $rule->enabled);
     }
 
+    public function test_edit_form_shows_category_cohort(): void {
+        $category = $this->getDataGenerator()->create_category();
+        $cohort = $this->getDataGenerator()->create_cohort([
+            'contextid' => \context_coursecat::instance($category->id)->id,
+            'name' => 'Category cohort',
+        ]);
+        $existing = manager::create_rule((object) ['cohortid' => $cohort->id,
+            'targettype' => manager::TARGET_COURSE, 'targetid' => $this->course->id,
+            'roleid' => $this->roleid, 'enabled' => 1]);
+
+        $form = new rule_form(null, ['rule' => $existing]);
+        $form->set_data_from_rule($existing);
+
+        $this->assertMatchesRegularExpression(
+            '/<option value="' . $cohort->id . '"\s+selected[^>]*>Category cohort</',
+            $form->render()
+        );
+    }
+
+    public function test_category_cohort_can_be_submitted(): void {
+        $category = $this->getDataGenerator()->create_category();
+        $cohort = $this->getDataGenerator()->create_cohort([
+            'contextid' => \context_coursecat::instance($category->id)->id,
+        ]);
+
+        [$rule, $errors] = $this->submit(['cohortid' => $cohort->id, 'courseid' => $this->course->id]);
+
+        $this->assertEmpty($errors);
+        $this->assertEquals($cohort->id, $rule->cohortid);
+    }
+
     public function test_edit_form_is_prefilled_from_rule(): void {
         $category = $this->getDataGenerator()->create_category();
         $existing = manager::create_rule((object) ['cohortid' => $this->cohort->id,

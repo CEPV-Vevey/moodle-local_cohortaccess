@@ -86,51 +86,6 @@ if (!$rules) {
     die();
 }
 
-$table = new html_table();
-$table->head = [
-    get_string('cohort', 'local_cohortaccess'),
-    get_string('target', 'local_cohortaccess'),
-    get_string('role', 'local_cohortaccess'),
-    get_string('members', 'local_cohortaccess'),
-    get_string('status', 'local_cohortaccess'),
-    get_string('actions', 'local_cohortaccess'),
-];
-$table->attributes['class'] = 'generaltable';
-foreach ($rules as $rule) {
-    $desc = manager::describe_rule($rule);
-    $target = $desc->targeturl ? html_writer::link($desc->targeturl, $desc->target) : $desc->target;
-
-    $members = manager::count_members($rule->cohortid) . html_writer::div(
-        get_string('assignments', 'local_cohortaccess', manager::count_assignments($rule->id)),
-        'small text-muted'
-    );
-
-    $status = $rule->enabled
-        ? html_writer::span(get_string('enabled', 'local_cohortaccess'), 'badge bg-success text-white')
-        : html_writer::span(get_string('disabled', 'local_cohortaccess'), 'badge bg-secondary text-white');
-    $warnings = manager::get_role_warnings($rule);
-    if (!$desc->targeturl) {
-        $warnings[] = get_string('targetmissing', 'local_cohortaccess');
-    }
-    if ($warnings) {
-        $status .= ' ' . $OUTPUT->pix_icon('i/warning', implode(' ', $warnings));
-    }
-
-    $actionurl = fn(string $action) => new moodle_url($baseurl, ['action' => $action, 'id' => $rule->id,
-        'sesskey' => sesskey()]);
-    $actions = [
-        html_writer::link(
-            new moodle_url('/local/cohortaccess/edit.php', ['id' => $rule->id]),
-            get_string('edit')
-        ),
-        $rule->enabled
-            ? html_writer::link($actionurl('disable'), get_string('disable', 'local_cohortaccess'))
-            : html_writer::link($actionurl('enable'), get_string('enable', 'local_cohortaccess')),
-        html_writer::link($actionurl('sync'), get_string('sync', 'local_cohortaccess')),
-        html_writer::link(new moodle_url($baseurl, ['action' => 'delete', 'id' => $rule->id]), get_string('delete')),
-    ];
-
-    $table->data[] = [$desc->cohort, $target, $desc->role, $members, $status, implode(' · ', $actions)];
-}
+$table = \local_cohortaccess\output\rules_table::build($rules, $baseurl);
 echo html_writer::table($table);
 echo $OUTPUT->footer();

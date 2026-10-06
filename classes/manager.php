@@ -318,7 +318,15 @@ class manager {
             $warnings[] = get_string('warningnocourseview', 'local_cohortaccess');
         }
         if ($rule->targettype === self::TARGET_CATEGORY) {
-            $checkhidden = true;
+            // Only relevant when the category tree contains a hidden course.
+            $context = context_coursecat::instance($rule->targetid, IGNORE_MISSING);
+            $checkhidden = $context && $DB->record_exists_sql(
+                'SELECT 1
+                   FROM {course} c
+                   JOIN {context} ctx ON ctx.instanceid = c.id AND ctx.contextlevel = :courselevel
+                  WHERE c.visible = 0 AND ' . $DB->sql_like('ctx.path', ':path'),
+                ['courselevel' => CONTEXT_COURSE, 'path' => $context->path . '/%']
+            );
         } else {
             $visible = $DB->get_field('course', 'visible', ['id' => $rule->targetid]);
             $checkhidden = $visible !== false && !$visible;

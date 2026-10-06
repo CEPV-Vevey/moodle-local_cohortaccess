@@ -78,8 +78,8 @@ fits. In *Site administration → Users → Permissions → Define roles*:
    the role in the target course or category. Site administrators always can.
 
 The plugin never changes role definitions. It shows a ⚠ warning when the
-chosen role lacks `moodle/course:view` (or `viewhiddencourses` for a hidden
-course or a category).
+chosen role lacks `moodle/course:view` (or `viewhiddencourses` when the target
+is a hidden course or a category containing hidden courses).
 
 > **Warning: a rule grants every capability of the role, not just viewing.**
 > The role is assigned in the whole course, or in every course of the category.

@@ -1,5 +1,10 @@
 # Changes
 
+## 0.2.1 (2026-10-06)
+
+- Category rules only warn about `moodle/course:viewhiddencourses` when the
+  category (or a subcategory) contains a hidden course.
+
 ## 0.2.0 (2026-10-06)
 
 - Rules list laid out like Moodle core management tables: eye icon to enable or

@@ -309,6 +309,23 @@ final class manager_test extends \advanced_testcase {
         $this->assertEquals(get_string('targetmissing', 'local_cohortaccess'), $desc->target);
     }
 
+    public function test_category_hidden_course_warning_only_when_a_course_is_hidden(): void {
+        $category = $this->getDataGenerator()->create_category();
+        $subcategory = $this->getDataGenerator()->create_category(['parent' => $category->id]);
+        $this->getDataGenerator()->create_course(['category' => $category->id]);
+        $rule = $this->create_course_rule(['targettype' => manager::TARGET_CATEGORY, 'targetid' => $category->id]);
+        $warning = get_string('warningnoviewhidden', 'local_cohortaccess');
+
+        $this->assertNotContains($warning, manager::get_role_warnings($rule));
+
+        $this->getDataGenerator()->create_course(['category' => $subcategory->id, 'visible' => 0]);
+        $this->assertContains($warning, manager::get_role_warnings($rule));
+
+        $empty = $this->getDataGenerator()->create_category();
+        $emptyrule = $this->create_course_rule(['targettype' => manager::TARGET_CATEGORY, 'targetid' => $empty->id]);
+        $this->assertNotContains($warning, manager::get_role_warnings($emptyrule));
+    }
+
     public function test_uninstall_removes_only_plugin_assignments(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/local/cohortaccess/db/uninstall.php');

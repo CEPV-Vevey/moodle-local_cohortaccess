@@ -21,6 +21,10 @@ use core_course_category;
 use local_cepv_cohortaccess\manager;
 use stdClass;
 
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->libdir . '/formslib.php');
+
 /**
  * Add / edit form for a cohort access rule.
  *

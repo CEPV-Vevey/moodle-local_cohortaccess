@@ -306,6 +306,74 @@ class manager {
     }
 
     /**
+     * Give a new cohort member the roles of the enabled rules of the cohort.
+     *
+     * @param int $cohortid Cohort id.
+     * @param int $userid User id.
+     */
+    public static function member_added(int $cohortid, int $userid): void {
+        global $DB;
+        foreach ($DB->get_records(self::TABLE, ['cohortid' => $cohortid, 'enabled' => 1]) as $rule) {
+            if ($context = self::get_target_context($rule)) {
+                role_assign($rule->roleid, $userid, $context->id, self::COMPONENT, $rule->id);
+            }
+        }
+    }
+
+    /**
+     * Remove from a former cohort member the roles given by the rules of the cohort.
+     *
+     * @param int $cohortid Cohort id.
+     * @param int $userid User id.
+     */
+    public static function member_removed(int $cohortid, int $userid): void {
+        global $DB;
+        foreach ($DB->get_records(self::TABLE, ['cohortid' => $cohortid], '', 'id') as $rule) {
+            role_unassign_all(['userid' => $userid, 'component' => self::COMPONENT, 'itemid' => $rule->id]);
+        }
+    }
+
+    /**
+     * Delete the rules of a deleted cohort and their role assignments.
+     *
+     * @param int $cohortid Cohort id.
+     */
+    public static function cohort_deleted(int $cohortid): void {
+        self::delete_rules_where(['cohortid' => $cohortid]);
+    }
+
+    /**
+     * Delete the rules targeting a deleted course or category.
+     *
+     * @param string $targettype TARGET_COURSE or TARGET_CATEGORY.
+     * @param int $targetid Course or category id.
+     */
+    public static function target_deleted(string $targettype, int $targetid): void {
+        self::delete_rules_where(['targettype' => $targettype, 'targetid' => $targetid]);
+    }
+
+    /**
+     * Delete the rules using a deleted role.
+     *
+     * @param int $roleid Role id.
+     */
+    public static function role_deleted(int $roleid): void {
+        self::delete_rules_where(['roleid' => $roleid]);
+    }
+
+    /**
+     * Delete the rules matching conditions, with their role assignments.
+     *
+     * @param array $conditions Rule table conditions.
+     */
+    private static function delete_rules_where(array $conditions): void {
+        global $DB;
+        foreach ($DB->get_records(self::TABLE, $conditions, '', 'id') as $rule) {
+            self::delete_rule($rule->id);
+        }
+    }
+
+    /**
      * Keep only the rule fields, with their database types.
      *
      * @param stdClass $data Raw data.

@@ -138,7 +138,7 @@ final class observer_test extends \advanced_testcase {
         $rule = $this->create_rule(['targettype' => manager::TARGET_CATEGORY,
             'targetid' => $this->category->id]);
 
-        \core_course_category::get($this->category->id)->delete_full(false);
+        \core_course_category::get($this->category->id, MUST_EXIST, true)->delete_full(false);
 
         $this->assertFalse(manager::get_rule($rule->id));
     }

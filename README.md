@@ -2,7 +2,7 @@
 
 [![Moodle Plugin CI](https://github.com/CEPV-Vevey/moodle-local_cohortaccess/actions/workflows/ci.yml/badge.svg)](https://github.com/CEPV-Vevey/moodle-local_cohortaccess/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/CEPV-Vevey/moodle-local_cohortaccess?include_prereleases&sort=semver)](https://github.com/CEPV-Vevey/moodle-local_cohortaccess/releases)
-![Moodle 5.0 | 5.1](https://img.shields.io/badge/Moodle-5.0%20%7C%205.1-orange)
+![Moodle 5.0 – 5.3](https://img.shields.io/badge/Moodle-5.0%20%E2%80%93%205.3-orange)
 [![License: GPL v3+](https://img.shields.io/badge/license-GPLv3%2B-blue)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 A Moodle local plugin that gives the members of a cohort **view access** to a
@@ -46,7 +46,8 @@ activity completion, not counted in course reports).
 
 ## Requirements
 
-- Moodle 5.0 or later (tested on 5.0 and 5.1, with PostgreSQL and MariaDB).
+- Moodle 5.0 to 5.3 (tested on 5.0, 5.1, 5.2 and 5.3, with PostgreSQL and
+  MariaDB). Moodle 5.3 itself requires PHP 8.3, PostgreSQL 17 or MariaDB 11.4.
 - A role allowed to view courses without enrolment (see
   [Setting up the role](#setting-up-the-role)).
 
@@ -213,7 +214,7 @@ vendor/bin/phpunit --testsuite local_cohortaccess_testsuite
 ```
 
 GitHub Actions runs moodle-plugin-ci (phplint, phpcs, phpdoc, validate,
-savepoints, mustache, phpunit) on Moodle 5.0 and 5.1.
+savepoints, mustache, phpunit) on Moodle 5.0, 5.1, 5.2 and 5.3.
 
 Releasing: bump `$plugin->version` and `$plugin->release` in `version.php`,
 update [CHANGES.md](CHANGES.md), commit, then push a matching tag

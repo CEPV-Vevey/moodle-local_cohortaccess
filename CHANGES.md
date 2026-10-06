@@ -1,5 +1,10 @@
 # Changes
 
+## 0.3.0 (2026-10-06)
+
+- Compatible with Moodle 5.0 to 5.3 (`supported = [500, 503]`).
+- CI runs on Moodle 5.0, 5.1, 5.2 and 5.3, with PostgreSQL 17 and MariaDB 11.4.
+
 ## 0.2.1 (2026-10-06)
 
 - Category rules only warn about `moodle/course:viewhiddencourses` when the

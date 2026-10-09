@@ -42,8 +42,10 @@ if ($action) {
         if (!optional_param('confirm', 0, PARAM_BOOL)) {
             echo $OUTPUT->header();
             $confirmurl = new moodle_url($baseurl, ['action' => 'delete', 'id' => $id, 'confirm' => 1]);
+            $desc = manager::describe_rule($rule);
+            $message = $desc->beneficiarytype === manager::BENEFICIARY_USER ? 'confirmdeleteuser' : 'confirmdelete';
             echo $OUTPUT->confirm(
-                get_string('confirmdelete', 'local_cohortaccess', manager::describe_rule($rule)),
+                get_string($message, 'local_cohortaccess', $desc),
                 new single_button($confirmurl, get_string('delete'), 'post', single_button::BUTTON_DANGER),
                 $baseurl
             );

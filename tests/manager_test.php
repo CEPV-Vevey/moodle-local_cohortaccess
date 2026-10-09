@@ -317,7 +317,10 @@ final class manager_test extends \advanced_testcase {
 
         $desc = manager::describe_rule($rule);
 
-        $this->assertEquals(format_string("Cours d'été & co"), $desc->cohort);
+        $this->assertEquals(format_string("Cours d'été & co"), $desc->beneficiary);
+        $this->assertEquals(manager::BENEFICIARY_COHORT, $desc->beneficiarytype);
+        $this->assertNull($desc->beneficiaryurl);
+        $this->assertFalse($desc->beneficiarymissing);
         $this->assertStringNotContainsString('&amp;amp;', $desc->target);
         $this->assertStringNotContainsString('<b>', $desc->target);
         $this->assertEquals('courseviewer', $desc->role);
@@ -327,6 +330,30 @@ final class manager_test extends \advanced_testcase {
         $desc = manager::describe_rule($rule);
         $this->assertNull($desc->targeturl);
         $this->assertEquals(get_string('targetmissing', 'local_cohortaccess'), $desc->target);
+    }
+
+    public function test_describe_user_rule(): void {
+        global $DB;
+        $user = $this->getDataGenerator()->create_user(['firstname' => 'Ada', 'lastname' => 'Lovelace']);
+        // The generator strips tags from names (PARAM_NOTAGS), so store the raw value directly.
+        $DB->set_field('user', 'firstname', 'Ada & <b>', ['id' => $user->id]);
+        $rule = $this->create_user_rule($user);
+
+        $desc = manager::describe_rule($rule);
+        $this->assertEquals(manager::BENEFICIARY_USER, $desc->beneficiarytype);
+        $this->assertEquals('Ada &amp; &lt;b&gt; Lovelace', $desc->beneficiary);
+        $this->assertEquals(new \moodle_url('/user/profile.php', ['id' => $user->id]), $desc->beneficiaryurl);
+        $this->assertFalse($desc->beneficiarymissing);
+        $this->assertStringContainsString(
+            'Ada &amp; &lt;b&gt; Lovelace',
+            get_string('confirmdeleteuser', 'local_cohortaccess', $desc)
+        );
+
+        $DB->set_field('user', 'deleted', 1, ['id' => $user->id]);
+        $desc = manager::describe_rule($rule);
+        $this->assertTrue($desc->beneficiarymissing);
+        $this->assertEquals('?', $desc->beneficiary);
+        $this->assertNull($desc->beneficiaryurl);
     }
 
     public function test_category_hidden_course_warning_only_when_a_course_is_hidden(): void {

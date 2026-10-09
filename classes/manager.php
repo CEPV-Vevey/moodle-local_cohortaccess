@@ -21,6 +21,7 @@ use context_course;
 use context_coursecat;
 use context_system;
 use core_php_time_limit;
+use moodle_url;
 use stdClass;
 
 /**
@@ -298,18 +299,33 @@ class manager {
      * Display names of the parts of a rule, formatted for HTML output (already escaped).
      *
      * @param stdClass $rule Rule.
-     * @return stdClass cohort, role, target (HTML-safe strings) and targeturl (moodle_url, or null if the target is missing).
+     * @return stdClass beneficiarytype (BENEFICIARY_COHORT or BENEFICIARY_USER), beneficiary,
+     *     role and target (HTML-safe strings), beneficiarymissing (bool), beneficiaryurl
+     *     (user profile moodle_url, else null) and targeturl (moodle_url, or null if the target is missing).
      */
     public static function describe_rule(stdClass $rule): stdClass {
         global $DB;
-        $cohort = $DB->get_record('cohort', ['id' => $rule->cohortid]);
         $role = $DB->get_record('role', ['id' => $rule->roleid]);
         $desc = (object) [
-            'cohort' => $cohort ? format_string($cohort->name, true, ['context' => $cohort->contextid]) : '?',
+            'beneficiarytype' => empty($rule->userid) ? self::BENEFICIARY_COHORT : self::BENEFICIARY_USER,
+            'beneficiary' => '?',
+            'beneficiaryurl' => null,
+            'beneficiarymissing' => true,
             'role' => $role ? role_get_name($role, context_system::instance()) : '?',
             'target' => get_string('targetmissing', 'local_cohortaccess'),
             'targeturl' => null,
         ];
+        if ($desc->beneficiarytype === self::BENEFICIARY_USER) {
+            $user = $DB->get_record('user', ['id' => $rule->userid, 'deleted' => 0]);
+            if ($user) {
+                $desc->beneficiary = s(fullname($user));
+                $desc->beneficiaryurl = new moodle_url('/user/profile.php', ['id' => $user->id]);
+                $desc->beneficiarymissing = false;
+            }
+        } else if ($cohort = $DB->get_record('cohort', ['id' => $rule->cohortid])) {
+            $desc->beneficiary = format_string($cohort->name, true, ['context' => $cohort->contextid]);
+            $desc->beneficiarymissing = false;
+        }
         if ($context = self::get_target_context($rule)) {
             $desc->target = $context->get_context_name(false);
             $desc->targeturl = $context->get_url();

@@ -129,4 +129,30 @@ final class rules_table_test extends \advanced_testcase {
 
         $this->assertStringContainsString(get_string('activeassignments', 'local_cohortaccess', 1), $table->data[0][3]);
     }
+
+    public function test_user_rule_shows_user_linked_to_profile(): void {
+        $user = $this->getDataGenerator()->create_user(['firstname' => 'Ada', 'lastname' => 'Lovelace']);
+        $rule = $this->create_rule(['userid' => $user->id]);
+        $cohortrule = $this->create_rule();
+        [$table, $html] = $this->render([$rule, $cohortrule]);
+
+        $cell = $table->data[0][0];
+        $this->assertStringContainsString('Ada Lovelace', $cell);
+        $this->assertStringContainsString((new moodle_url('/user/profile.php', ['id' => $user->id]))->out(), $cell);
+        $this->assertStringContainsString('title="' . get_string('user', 'local_cohortaccess') . '"', $cell);
+        $this->assertStringContainsString('title="' . get_string('cohort', 'local_cohortaccess') . '"', $table->data[1][0]);
+        $this->assertStringStartsWith('1', $table->data[0][3]);
+        $this->assertStringContainsString(get_string('beneficiary', 'local_cohortaccess'), $html);
+    }
+
+    public function test_deleted_user_shows_warning(): void {
+        global $DB;
+        $user = $this->getDataGenerator()->create_user();
+        $rule = $this->create_rule(['userid' => $user->id]);
+        $DB->set_field('user', 'deleted', 1, ['id' => $user->id]);
+        [$table] = $this->render([$rule]);
+
+        $this->assertStringContainsString(get_string('usermissing', 'local_cohortaccess'), $table->data[0][0]);
+        $this->assertStringStartsWith('0', $table->data[0][3]);
+    }
 }

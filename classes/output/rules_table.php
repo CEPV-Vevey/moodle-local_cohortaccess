@@ -45,7 +45,7 @@ class rules_table {
         $table = new html_table();
         $table->attributes['class'] = 'generaltable admintable';
         $table->head = [
-            get_string('cohort', 'local_cohortaccess'),
+            get_string('beneficiary', 'local_cohortaccess'),
             get_string('target', 'local_cohortaccess'),
             get_string('role', 'local_cohortaccess'),
             get_string('members', 'local_cohortaccess'),
@@ -70,6 +70,19 @@ class rules_table {
     private static function row(stdClass $rule, moodle_url $baseurl): array {
         global $OUTPUT;
         $desc = manager::describe_rule($rule);
+
+        $beneficiary = $OUTPUT->pix_icon(
+            $desc->beneficiarytype === manager::BENEFICIARY_USER ? 'i/user' : 'i/cohort',
+            get_string($desc->beneficiarytype, 'local_cohortaccess')
+        );
+        if ($desc->beneficiaryurl) {
+            $beneficiary .= html_writer::link($desc->beneficiaryurl, $desc->beneficiary);
+        } else {
+            $beneficiary .= $desc->beneficiary;
+        }
+        if ($desc->beneficiarymissing && $desc->beneficiarytype === manager::BENEFICIARY_USER) {
+            $beneficiary .= ' ' . self::warning(get_string('usermissing', 'local_cohortaccess'));
+        }
 
         if ($desc->targeturl) {
             $target = html_writer::link($desc->targeturl, $desc->target);
@@ -108,7 +121,7 @@ class rules_table {
             new pix_icon('t/delete', get_string('delete'))
         );
 
-        return [$desc->cohort, $target, $role, $members, $toggle, $actions];
+        return [$beneficiary, $target, $role, $members, $toggle, $actions];
     }
 
     /**

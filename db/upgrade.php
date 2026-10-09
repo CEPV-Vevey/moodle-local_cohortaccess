@@ -29,5 +29,28 @@
  * @return bool
  */
 function xmldb_local_cohortaccess_upgrade($oldversion) {
+    global $DB;
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2026100900) {
+        $table = new xmldb_table('local_cohortaccess');
+
+        // A rule now targets either a cohort or a single user: cohortid becomes optional.
+        $key = new xmldb_key('cohortid', XMLDB_KEY_FOREIGN, ['cohortid'], 'cohort', ['id']);
+        $dbman->drop_key($table, $key);
+        $field = new xmldb_field('cohortid', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'id');
+        $dbman->change_field_notnull($table, $field);
+        $dbman->add_key($table, $key);
+
+        $field = new xmldb_field('userid', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'cohortid');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        $key = new xmldb_key('userid', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+        $dbman->add_key($table, $key);
+
+        upgrade_plugin_savepoint(true, 2026100900, 'local', 'cohortaccess');
+    }
+
     return true;
 }

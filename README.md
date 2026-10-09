@@ -11,8 +11,8 @@ enrolling them**.
 
 The plugin assigns a role (`role_assignments`) to the cohort members (or to
 the user) in the course or category context and keeps it in sync with the
-cohort. It never
-creates enrolments (`user_enrolments`).
+cohort. It never creates
+enrolments (`user_enrolments`).
 
 ![Rules list](docs/rules-list.png)
 
@@ -113,7 +113,8 @@ below *Cohorts*).
    - eye icon: **disable** (open eye) or **enable** (slashed eye) the rule;
      disabled rules are greyed out and their assignments are removed;
    - **synchronise**: recompute the rule's assignments now;
-   - **edit**: change cohort, target or role (old assignments are replaced);
+   - **edit**: change the beneficiary (cohort or user), target or role (old
+     assignments are replaced);
    - **delete**: remove the rule and all its assignments (with confirmation).
 
 Members then open the course with its direct link (`/course/view.php?id=…`) or

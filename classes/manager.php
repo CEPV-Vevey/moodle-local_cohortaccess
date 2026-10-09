@@ -384,7 +384,17 @@ class manager {
      * @return int
      */
     public static function count_beneficiaries(stdClass $rule): int {
-        return count(self::expected_users($rule));
+        global $DB;
+        if (!empty($rule->userid)) {
+            return count(self::expected_users($rule));
+        }
+        return $DB->count_records_sql(
+            'SELECT COUNT(1)
+               FROM {cohort_members} cm
+               JOIN {user} u ON u.id = cm.userid AND u.deleted = 0
+              WHERE cm.cohortid = :cohortid',
+            ['cohortid' => $rule->cohortid]
+        );
     }
 
     /**

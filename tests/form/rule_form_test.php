@@ -57,6 +57,7 @@ final class rule_form_test extends \advanced_testcase {
     private function submit(array $data, ?stdClass $rule = null): array {
         rule_form::mock_submit($data + [
             'id' => $rule->id ?? 0,
+            'beneficiarytype' => manager::BENEFICIARY_COHORT,
             'cohortid' => $this->cohort->id,
             'targettype' => manager::TARGET_COURSE,
             'roleid' => $this->roleid,
@@ -65,6 +66,21 @@ final class rule_form_test extends \advanced_testcase {
         $form = new rule_form(null, ['rule' => $rule]);
         $errors = $form->validation($form->get_submitted_data() ? (array) $form->get_submitted_data() : [], []);
         return [$form->get_rule_data(), $errors];
+    }
+
+    /**
+     * Log in as a user who may manage rules and assign the test role, but not see user details.
+     */
+    private function set_delegated_manager(): void {
+        $syscontext = \context_system::instance();
+        $coordinator = create_role('coordinator', 'coordinator', '');
+        set_role_contextlevels($coordinator, [CONTEXT_SYSTEM]);
+        assign_capability('local/cohortaccess:manage', CAP_ALLOW, $coordinator, $syscontext->id);
+        assign_capability('moodle/role:assign', CAP_ALLOW, $coordinator, $syscontext->id);
+        core_role_set_assign_allowed($coordinator, $this->roleid);
+        $user = $this->getDataGenerator()->create_user();
+        role_assign($coordinator, $user->id, $syscontext->id);
+        $this->setUser($user);
     }
 
     public function test_valid_course_rule(): void {
@@ -124,15 +140,7 @@ final class rule_form_test extends \advanced_testcase {
 
     public function test_delegated_manager_limited_to_roles_they_may_assign(): void {
         global $DB;
-        $syscontext = \context_system::instance();
-        $coordinator = create_role('coordinator', 'coordinator', '');
-        set_role_contextlevels($coordinator, [CONTEXT_SYSTEM]);
-        assign_capability('local/cohortaccess:manage', CAP_ALLOW, $coordinator, $syscontext->id);
-        assign_capability('moodle/role:assign', CAP_ALLOW, $coordinator, $syscontext->id);
-        core_role_set_assign_allowed($coordinator, $this->roleid);
-        $user = $this->getDataGenerator()->create_user();
-        role_assign($coordinator, $user->id, $syscontext->id);
-        $this->setUser($user);
+        $this->set_delegated_manager();
         $editingteacher = $DB->get_field('role', 'id', ['shortname' => 'editingteacher']);
 
         [$rule, $errors] = $this->submit(['courseid' => $this->course->id, 'roleid' => $editingteacher]);
@@ -197,5 +205,88 @@ final class rule_form_test extends \advanced_testcase {
         $html = $form->render();
         $this->assertStringContainsString('value="' . $existing->id . '"', $html);
         $this->assertMatchesRegularExpression('/<option value="' . $category->id . '"\s+selected/', $html);
+    }
+
+    public function test_valid_user_rule(): void {
+        $user = $this->getDataGenerator()->create_user();
+        [$rule, $errors] = $this->submit(['beneficiarytype' => manager::BENEFICIARY_USER,
+            'userid' => $user->id, 'courseid' => $this->course->id]);
+
+        $this->assertEmpty($errors);
+        $this->assertEquals($user->id, $rule->userid);
+        $this->assertEmpty($rule->cohortid);
+    }
+
+    public function test_cohort_rule_ignores_submitted_user(): void {
+        $user = $this->getDataGenerator()->create_user();
+        [$rule, $errors] = $this->submit(['userid' => $user->id, 'courseid' => $this->course->id]);
+
+        $this->assertEmpty($errors);
+        $this->assertEquals($this->cohort->id, $rule->cohortid);
+        $this->assertEmpty($rule->userid);
+    }
+
+    public function test_user_must_exist_and_not_be_deleted_or_guest(): void {
+        $deleted = $this->getDataGenerator()->create_user();
+        delete_user($deleted);
+        $guest = guest_user();
+        foreach ([0, 999999, $deleted->id, $guest->id] as $userid) {
+            [$rule, $errors] = $this->submit(['beneficiarytype' => manager::BENEFICIARY_USER,
+                'userid' => $userid, 'courseid' => $this->course->id]);
+            $this->assertNull($rule, "userid $userid");
+            $this->assertArrayHasKey('userid', $errors, "userid $userid");
+        }
+    }
+
+    public function test_duplicate_user_rule_rejected_but_not_against_cohort_rule(): void {
+        $user = $this->getDataGenerator()->create_user();
+        manager::create_rule((object) ['cohortid' => $this->cohort->id,
+            'targettype' => manager::TARGET_COURSE, 'targetid' => $this->course->id,
+            'roleid' => $this->roleid, 'enabled' => 1]);
+        $data = ['beneficiarytype' => manager::BENEFICIARY_USER, 'userid' => $user->id,
+            'courseid' => $this->course->id];
+
+        [, $errors] = $this->submit($data);
+        $this->assertEmpty($errors);
+
+        manager::create_rule((object) ['userid' => $user->id,
+            'targettype' => manager::TARGET_COURSE, 'targetid' => $this->course->id,
+            'roleid' => $this->roleid, 'enabled' => 1]);
+        [, $errors] = $this->submit($data);
+        $this->assertEquals(get_string('duplicaterule', 'local_cohortaccess'), $errors['userid']);
+    }
+
+    public function test_user_rules_need_viewalldetails(): void {
+        $user = $this->getDataGenerator()->create_user();
+        $this->set_delegated_manager();
+
+        $html = (new rule_form())->render();
+        $this->assertStringNotContainsString('name="userid"', $html);
+        $this->assertMatchesRegularExpression(
+            '/<input(?=[^>]*type="hidden")(?=[^>]*name="beneficiarytype")(?=[^>]*value="cohort")[^>]*>/',
+            $html
+        );
+
+        [$rule, $errors] = $this->submit(['beneficiarytype' => manager::BENEFICIARY_USER,
+            'userid' => $user->id, 'courseid' => $this->course->id]);
+        $this->assertNull($rule);
+        $this->assertNotEmpty($errors);
+
+        [$rule, $errors] = $this->submit(['courseid' => $this->course->id]);
+        $this->assertEmpty($errors);
+        $this->assertEquals($this->cohort->id, $rule->cohortid);
+    }
+
+    public function test_edit_form_is_prefilled_from_user_rule(): void {
+        $user = $this->getDataGenerator()->create_user(['firstname' => 'Ada', 'lastname' => 'Lovelace']);
+        $existing = manager::create_rule((object) ['userid' => $user->id,
+            'targettype' => manager::TARGET_COURSE, 'targetid' => $this->course->id,
+            'roleid' => $this->roleid, 'enabled' => 1]);
+        $form = new rule_form(null, ['rule' => $existing]);
+        $form->set_data_from_rule($existing);
+        $html = $form->render();
+
+        $this->assertMatchesRegularExpression('/<option value="user"\s+selected/', $html);
+        $this->assertMatchesRegularExpression('/value="' . $user->id . '"\s+selected\s+data-html="Ada Lovelace"/', $html);
     }
 }

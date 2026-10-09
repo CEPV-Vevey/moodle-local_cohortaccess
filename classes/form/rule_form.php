@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/formslib.php');
 
 /**
- * Add / edit form for a cohort access rule.
+ * Add / edit form for an access rule (cohort or user).
  *
  * Custom data: 'rule' => stdClass|null, the rule being edited.
  *
@@ -35,6 +35,9 @@ require_once($CFG->libdir . '/formslib.php');
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class rule_form extends \moodleform {
+    /** @var bool Whether the current user may search users (needed to pick a single user). */
+    private bool $canpickuser = false;
+
     /**
      * Form definition.
      */
@@ -45,19 +48,45 @@ class rule_form extends \moodleform {
         $mform->addElement('hidden', 'id', 0);
         $mform->setType('id', PARAM_INT);
 
+        // The core user selector searches with core_user_search_identity, which needs viewalldetails.
+        $this->canpickuser = has_capability('moodle/user:viewalldetails', context_system::instance());
+        if ($this->canpickuser) {
+            $mform->addElement('select', 'beneficiarytype', get_string('beneficiarytype', 'local_cohortaccess'), [
+                manager::BENEFICIARY_COHORT => get_string('cohort', 'local_cohortaccess'),
+                manager::BENEFICIARY_USER => get_string('user', 'local_cohortaccess'),
+            ]);
+        } else {
+            $mform->addElement('hidden', 'beneficiarytype');
+            $mform->setType('beneficiarytype', PARAM_ALPHA);
+        }
+        $mform->setDefault('beneficiarytype', manager::BENEFICIARY_COHORT);
+
         $cohortelement = $mform->addElement('cohort', 'cohortid', get_string('cohort', 'local_cohortaccess'), [
             'contextid' => context_system::instance()->id,
             'includes' => 'all',
         ]);
         // The core element only pre-fills cohorts of the system context (or its parents):
         // add the edited rule's cohort explicitly so that category cohorts are shown too.
-        if (!empty($this->_customdata['rule'])) {
+        if (!empty($this->_customdata['rule']->cohortid)) {
             $cohort = $DB->get_record('cohort', ['id' => $this->_customdata['rule']->cohortid]);
             if ($cohort) {
                 $cohortelement->addOption(format_string($cohort->name, true, ['context' => $cohort->contextid]), $cohort->id);
             }
         }
-        $mform->addRule('cohortid', null, 'required', null, 'client');
+        $mform->hideIf('cohortid', 'beneficiarytype', 'neq', manager::BENEFICIARY_COHORT);
+
+        if ($this->canpickuser) {
+            $mform->addElement('autocomplete', 'userid', get_string('user', 'local_cohortaccess'), [], [
+                'ajax' => 'core_user/form_user_selector',
+                'valuehtmlcallback' => function ($userid) {
+                    global $DB;
+                    $user = $DB->get_record('user', ['id' => (int) $userid, 'deleted' => 0]);
+                    return $user ? s(fullname($user)) : false;
+                },
+            ]);
+            $mform->setType('userid', PARAM_INT);
+            $mform->hideIf('userid', 'beneficiarytype', 'neq', manager::BENEFICIARY_USER);
+        }
 
         $mform->addElement('select', 'targettype', get_string('targettype', 'local_cohortaccess'), [
             manager::TARGET_COURSE => get_string('targetcourse', 'local_cohortaccess'),
@@ -102,6 +131,7 @@ class rule_form extends \moodleform {
      */
     public function set_data_from_rule(stdClass $rule): void {
         $data = clone $rule;
+        $data->beneficiarytype = empty($rule->userid) ? manager::BENEFICIARY_COHORT : manager::BENEFICIARY_USER;
         if ($rule->targettype === manager::TARGET_CATEGORY) {
             $data->categoryid = $rule->targetid;
         } else {
@@ -124,8 +154,9 @@ class rule_form extends \moodleform {
     }
 
     /**
-     * Validation: target required and existing, role and cohort existing, role assignable
-     * by the current user in the target context, no duplicate rule.
+     * Validation: beneficiary (cohort, or a non-deleted non-guest user) existing, target
+     * required and existing, role existing and assignable by the current user in the
+     * target context, no duplicate rule.
      *
      * @param array $data Submitted data.
      * @param array $files Submitted files.
@@ -135,8 +166,17 @@ class rule_form extends \moodleform {
         global $DB;
         $errors = parent::validation($data, $files);
         $rule = self::to_rule((object) $data);
+        $isuser = ($data['beneficiarytype'] ?? '') === manager::BENEFICIARY_USER;
+        $beneficiaryfield = $isuser ? 'userid' : 'cohortid';
 
-        if (!$rule->cohortid || !$DB->record_exists('cohort', ['id' => $rule->cohortid])) {
+        if ($isuser) {
+            $user = $rule->userid ? $DB->get_record('user', ['id' => $rule->userid, 'deleted' => 0]) : false;
+            if (!$this->canpickuser) {
+                $errors['beneficiarytype'] = get_string('required');
+            } else if (!$user || isguestuser($user)) {
+                $errors['userid'] = get_string('required');
+            }
+        } else if (!$rule->cohortid || !$DB->record_exists('cohort', ['id' => $rule->cohortid])) {
             $errors['cohortid'] = get_string('required');
         }
         if (!$rule->roleid || !$DB->record_exists('role', ['id' => $rule->roleid])) {
@@ -157,7 +197,7 @@ class rule_form extends \moodleform {
             $errors['roleid'] = get_string('rolenotassignable', 'local_cohortaccess');
         }
         if (!$errors && manager::rule_exists($rule, $rule->id)) {
-            $errors['cohortid'] = get_string('duplicaterule', 'local_cohortaccess');
+            $errors[$beneficiaryfield] = get_string('duplicaterule', 'local_cohortaccess');
         }
         return $errors;
     }
@@ -193,9 +233,11 @@ class rule_form extends \moodleform {
         $targettype = ($data->targettype ?? '') === manager::TARGET_CATEGORY
             ? manager::TARGET_CATEGORY : manager::TARGET_COURSE;
         $targetfield = $targettype === manager::TARGET_CATEGORY ? 'categoryid' : 'courseid';
+        $isuser = ($data->beneficiarytype ?? '') === manager::BENEFICIARY_USER;
         return (object) [
             'id' => (int) ($data->id ?? 0),
-            'cohortid' => (int) ($data->cohortid ?? 0),
+            'cohortid' => $isuser ? 0 : (int) ($data->cohortid ?? 0),
+            'userid' => $isuser ? (int) ($data->userid ?? 0) : 0,
             'targettype' => $targettype,
             'targetid' => (int) ($data->{$targetfield} ?? 0),
             'roleid' => (int) ($data->roleid ?? 0),

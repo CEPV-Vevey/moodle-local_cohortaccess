@@ -96,6 +96,23 @@ final class manager_test extends \advanced_testcase {
     }
 
     /**
+     * Create a rule giving the test role to a single user on the test course.
+     *
+     * @param stdClass $user Beneficiary.
+     * @param array $overrides Rule field overrides.
+     * @return stdClass The created rule.
+     */
+    private function create_user_rule(stdClass $user, array $overrides = []): stdClass {
+        return manager::create_rule((object) array_merge([
+            'userid' => $user->id,
+            'targettype' => manager::TARGET_COURSE,
+            'targetid' => $this->course->id,
+            'roleid' => $this->roleid,
+            'enabled' => 1,
+        ], $overrides));
+    }
+
+    /**
      * Count plugin role assignments for a rule.
      *
      * @param int $ruleid Rule id.
@@ -256,8 +273,11 @@ final class manager_test extends \advanced_testcase {
 
     public function test_counts(): void {
         $rule = $this->create_course_rule();
-        $this->assertEquals(3, manager::count_members($this->cohort->id));
+        $this->assertEquals(3, manager::count_beneficiaries($rule));
         $this->assertEquals(3, manager::count_assignments($rule->id));
+
+        $userrule = $this->create_user_rule($this->getDataGenerator()->create_user());
+        $this->assertEquals(1, manager::count_beneficiaries($userrule));
     }
 
     public function test_sync_all_removes_assignments_of_missing_rules(): void {
@@ -359,5 +379,147 @@ final class manager_test extends \advanced_testcase {
         $rule = $this->create_course_rule(['targetid' => $hidden->id,
             'roleid' => $this->create_view_role('viewhidden', true)]);
         $this->assertEmpty(manager::get_role_warnings($rule));
+    }
+
+    public function test_user_rule_assigns_role_to_the_user_only(): void {
+        global $DB;
+        $user = $this->getDataGenerator()->create_user();
+        $rule = $this->create_user_rule($user);
+        $context = context_course::instance($this->course->id);
+
+        $stored = manager::get_rule($rule->id);
+        $this->assertNull($stored->cohortid);
+        $this->assertEquals($user->id, $stored->userid);
+        $this->assertEquals(1, $this->count_ras($rule->id, ['userid' => $user->id, 'contextid' => $context->id]));
+        $this->assertEquals(1, $this->count_ras($rule->id));
+        $this->assertTrue(can_access_course($this->course, $user));
+        $this->assertFalse(is_enrolled($context, $user));
+        $this->assertEquals(0, $DB->count_records('user_enrolments'));
+        $this->assertFalse(can_access_course($this->course, $this->members[0]));
+    }
+
+    public function test_user_rule_disable_enable_delete(): void {
+        $user = $this->getDataGenerator()->create_user();
+        $rule = $this->create_user_rule($user);
+
+        manager::set_enabled($rule->id, false);
+        $this->assertEquals(0, $this->count_ras($rule->id));
+        manager::set_enabled($rule->id, true);
+        $this->assertEquals(1, $this->count_ras($rule->id));
+        manager::delete_rule($rule->id);
+        $this->assertEquals(0, $this->count_ras($rule->id));
+        $this->assertFalse(can_access_course($this->course, $user));
+    }
+
+    public function test_cohort_and_user_both_given_makes_a_user_rule(): void {
+        $user = $this->getDataGenerator()->create_user();
+        $rule = $this->create_user_rule($user, ['cohortid' => $this->cohort->id]);
+
+        $stored = manager::get_rule($rule->id);
+        $this->assertNull($stored->cohortid);
+        $this->assertEquals($user->id, $stored->userid);
+        $this->assertEquals(1, $this->count_ras($rule->id));
+    }
+
+    public function test_update_rule_switches_beneficiary(): void {
+        $user = $this->getDataGenerator()->create_user();
+        $rule = $this->create_user_rule($user);
+
+        $data = clone $rule;
+        $data->userid = 0;
+        $data->cohortid = $this->cohort->id;
+        manager::update_rule($data);
+        $stored = manager::get_rule($rule->id);
+        $this->assertNull($stored->userid);
+        $this->assertEquals($this->cohort->id, $stored->cohortid);
+        $this->assertEquals(3, $this->count_ras($rule->id));
+        $this->assertEquals(0, $this->count_ras($rule->id, ['userid' => $user->id]));
+
+        $data->userid = $user->id;
+        manager::update_rule($data);
+        $stored = manager::get_rule($rule->id);
+        $this->assertNull($stored->cohortid);
+        $this->assertEquals(1, $this->count_ras($rule->id));
+        $this->assertEquals(1, $this->count_ras($rule->id, ['userid' => $user->id]));
+    }
+
+    public function test_user_rule_and_cohort_rule_are_independent(): void {
+        $member = $this->members[0];
+        $cohortrule = $this->create_course_rule();
+        $userrule = $this->create_user_rule($member);
+        $this->assertEquals(1, $this->count_ras($userrule->id));
+
+        manager::set_enabled($userrule->id, false);
+        $this->assertTrue(can_access_course($this->course, $member));
+        manager::set_enabled($userrule->id, true);
+        manager::delete_rule($cohortrule->id);
+        $this->assertTrue(can_access_course($this->course, $member));
+        $this->assertEquals(1, $this->count_ras($userrule->id));
+    }
+
+    public function test_suspended_user_keeps_user_rule_assignment(): void {
+        $user = $this->getDataGenerator()->create_user(['suspended' => 1]);
+        $rule = $this->create_user_rule($user);
+
+        $this->assertEquals(1, $this->count_ras($rule->id));
+        $this->assertEquals(['added' => 0, 'removed' => 0], manager::sync_rule($rule));
+    }
+
+    public function test_sync_removes_assignment_of_deleted_user(): void {
+        global $DB;
+        $user = $this->getDataGenerator()->create_user();
+        $rule = $this->create_user_rule($user);
+        // Deleted behind the plugin's back: no user_deleted event.
+        $DB->set_field('user', 'deleted', 1, ['id' => $user->id]);
+
+        $this->assertEquals(['added' => 0, 'removed' => 1], manager::sync_all());
+        $this->assertNotEmpty(manager::get_rule($rule->id));
+        $this->assertEquals(0, manager::count_beneficiaries($rule));
+    }
+
+    public function test_rule_exists_for_user_rules(): void {
+        $user = $this->getDataGenerator()->create_user();
+        $rule = $this->create_user_rule($user);
+        $data = clone $rule;
+        unset($data->id);
+
+        $this->assertTrue(manager::rule_exists($data));
+        $this->assertFalse(manager::rule_exists($rule, $rule->id));
+        $data->userid = $this->getDataGenerator()->create_user()->id;
+        $this->assertFalse(manager::rule_exists($data));
+
+        // A cohort rule with the same target and role is not a duplicate of a user rule.
+        $cohortdata = (object) ['cohortid' => $this->cohort->id, 'targettype' => $rule->targettype,
+            'targetid' => $rule->targetid, 'roleid' => $rule->roleid, 'enabled' => 1];
+        $this->assertFalse(manager::rule_exists($cohortdata));
+        $this->create_course_rule();
+        $this->assertTrue(manager::rule_exists($cohortdata));
+        $this->assertTrue(manager::rule_exists((object) (['userid' => $user->id] + (array) $cohortdata)));
+    }
+
+    public function test_user_deleted_removes_only_that_users_rules(): void {
+        $user = $this->getDataGenerator()->create_user();
+        $userrule = $this->create_user_rule($user);
+        $otherrule = $this->create_user_rule($this->getDataGenerator()->create_user());
+        $cohortrule = $this->create_course_rule();
+
+        manager::user_deleted($user->id);
+
+        $this->assertFalse(manager::get_rule($userrule->id));
+        $this->assertEquals(0, $this->count_ras($userrule->id));
+        $this->assertNotEmpty(manager::get_rule($otherrule->id));
+        $this->assertNotEmpty(manager::get_rule($cohortrule->id));
+    }
+
+    public function test_cohort_membership_changes_ignore_user_rules(): void {
+        $user = $this->getDataGenerator()->create_user();
+        $rule = $this->create_user_rule($user);
+
+        cohort_add_member($this->cohort->id, $user->id);
+        cohort_remove_member($this->cohort->id, $user->id);
+        manager::cohort_deleted($this->cohort->id);
+
+        $this->assertNotEmpty(manager::get_rule($rule->id));
+        $this->assertEquals(1, $this->count_ras($rule->id));
     }
 }

@@ -26,8 +26,8 @@ use stdClass;
 /**
  * Business logic: rule storage and role assignment synchronisation.
  *
- * Each rule gives the members of a cohort a role in a course or course category
- * context. Role assignments are tagged with component = COMPONENT and
+ * Each rule gives the members of a cohort, or a single user, a role in a course
+ * or course category context. Role assignments are tagged with component = COMPONENT and
  * itemid = rule id, so the plugin never touches manual assignments or those
  * created by other plugins. No enrolment is ever created.
  *
@@ -47,6 +47,12 @@ class manager {
 
     /** @var string Target type: course category. */
     public const TARGET_CATEGORY = 'category';
+
+    /** @var string Beneficiary type: the members of a cohort. */
+    public const BENEFICIARY_COHORT = 'cohort';
+
+    /** @var string Beneficiary type: a single user. */
+    public const BENEFICIARY_USER = 'user';
 
     /**
      * Get a rule.
@@ -72,7 +78,7 @@ class manager {
     /**
      * Create a rule and synchronise its role assignments.
      *
-     * @param stdClass $data cohortid, targettype, targetid, roleid, enabled.
+     * @param stdClass $data cohortid or userid, targettype, targetid, roleid, enabled.
      * @return stdClass The created rule.
      */
     public static function create_rule(stdClass $data): stdClass {
@@ -132,7 +138,7 @@ class manager {
     }
 
     /**
-     * Whether another rule with the same cohort, target and role exists.
+     * Whether another rule with the same beneficiary, target and role exists.
      *
      * @param stdClass $data Rule data.
      * @param int $excludeid Rule id to ignore (the rule being edited).
@@ -140,15 +146,17 @@ class manager {
      */
     public static function rule_exists(stdClass $data, int $excludeid = 0): bool {
         global $DB;
+        $rule = self::normalise($data);
+        $field = $rule->userid ? 'userid' : 'cohortid';
         return $DB->record_exists_select(
             self::TABLE,
-            'cohortid = :cohortid AND targettype = :targettype AND targetid = :targetid
-             AND roleid = :roleid AND id <> :excludeid',
+            "$field = :beneficiaryid AND targettype = :targettype AND targetid = :targetid
+             AND roleid = :roleid AND id <> :excludeid",
             [
-                'cohortid' => $data->cohortid,
-                'targettype' => $data->targettype,
-                'targetid' => $data->targetid,
-                'roleid' => $data->roleid,
+                'beneficiaryid' => $rule->$field,
+                'targettype' => $rule->targettype,
+                'targetid' => $rule->targetid,
+                'roleid' => $rule->roleid,
                 'excludeid' => $excludeid,
             ]
         );
@@ -176,8 +184,8 @@ class manager {
      *
      * The rule is re-read from the database, so a stale copy cannot re-grant
      * access after the rule was deleted or changed. Expected assignments are the
-     * non-deleted cohort members when the rule exists, is enabled and its target
-     * exists. Assignments of this rule with another role, another context or a
+     * beneficiaries (see expected_users()) when the rule exists, is enabled and its
+     * target exists. Assignments of this rule with another role, another context or a
      * user not expected are removed; missing ones are added.
      *
      * @param stdClass $rule Rule.
@@ -191,14 +199,7 @@ class manager {
         $context = $current ? self::get_target_context($current) : null;
         $expected = [];
         if ($current && $current->enabled && $context) {
-            $expected = $DB->get_fieldset_sql(
-                'SELECT cm.userid
-                   FROM {cohort_members} cm
-                   JOIN {user} u ON u.id = cm.userid AND u.deleted = 0
-                  WHERE cm.cohortid = :cohortid',
-                ['cohortid' => $current->cohortid]
-            );
-            $expected = array_fill_keys($expected, true);
+            $expected = self::expected_users($current);
         }
 
         $result = ['added' => 0, 'removed' => 0];
@@ -230,6 +231,29 @@ class manager {
             $result['added']++;
         }
         return $result;
+    }
+
+    /**
+     * Users who should get the role of a rule: the non-deleted members of its cohort,
+     * or its user when not deleted.
+     *
+     * @param stdClass $rule Rule.
+     * @return array<int, true> Keyed by user id.
+     */
+    private static function expected_users(stdClass $rule): array {
+        global $DB;
+        if (!empty($rule->userid)) {
+            $userids = $DB->get_fieldset_select('user', 'id', 'id = :userid AND deleted = 0', ['userid' => $rule->userid]);
+        } else {
+            $userids = $DB->get_fieldset_sql(
+                'SELECT cm.userid
+                   FROM {cohort_members} cm
+                   JOIN {user} u ON u.id = cm.userid AND u.deleted = 0
+                  WHERE cm.cohortid = :cohortid',
+                ['cohortid' => $rule->cohortid]
+            );
+        }
+        return array_fill_keys($userids, true);
     }
 
     /**
@@ -338,20 +362,13 @@ class manager {
     }
 
     /**
-     * Count the non-deleted members of a cohort.
+     * Count the users a rule applies to: non-deleted cohort members, or 1 for an existing user.
      *
-     * @param int $cohortid Cohort id.
+     * @param stdClass $rule Rule.
      * @return int
      */
-    public static function count_members(int $cohortid): int {
-        global $DB;
-        return $DB->count_records_sql(
-            'SELECT COUNT(1)
-               FROM {cohort_members} cm
-               JOIN {user} u ON u.id = cm.userid AND u.deleted = 0
-              WHERE cm.cohortid = :cohortid',
-            ['cohortid' => $cohortid]
-        );
+    public static function count_beneficiaries(stdClass $rule): int {
+        return count(self::expected_users($rule));
     }
 
     /**
@@ -403,6 +420,15 @@ class manager {
     }
 
     /**
+     * Delete the rules of a deleted user and their role assignments.
+     *
+     * @param int $userid User id.
+     */
+    public static function user_deleted(int $userid): void {
+        self::delete_rules_where(['userid' => $userid]);
+    }
+
+    /**
      * Delete the rules targeting a deleted course or category.
      *
      * @param string $targettype TARGET_COURSE or TARGET_CATEGORY.
@@ -436,12 +462,17 @@ class manager {
     /**
      * Keep only the rule fields, with their database types.
      *
+     * A non-empty userid makes a user rule (cohortid is then null); otherwise the
+     * rule is a cohort rule (userid is null).
+     *
      * @param stdClass $data Raw data.
      * @return stdClass
      */
     private static function normalise(stdClass $data): stdClass {
+        $userid = (int) ($data->userid ?? 0);
         return (object) [
-            'cohortid' => (int) $data->cohortid,
+            'cohortid' => $userid ? null : (int) ($data->cohortid ?? 0),
+            'userid' => $userid ?: null,
             'targettype' => $data->targettype === self::TARGET_CATEGORY ? self::TARGET_CATEGORY : self::TARGET_COURSE,
             'targetid' => (int) $data->targetid,
             'roleid' => (int) $data->roleid,

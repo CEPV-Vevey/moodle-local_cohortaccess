@@ -82,7 +82,7 @@ class rules_table {
             $role .= ' ' . self::warning(implode(' ', $warnings));
         }
 
-        $members = manager::count_members($rule->cohortid) . html_writer::div(
+        $members = manager::count_beneficiaries($rule) . html_writer::div(
             get_string('activeassignments', 'local_cohortaccess', manager::count_assignments($rule->id)),
             'small text-muted'
         );

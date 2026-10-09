@@ -17,7 +17,7 @@
 namespace local_cohortaccess;
 
 /**
- * Event observers: keep role assignments in line with cohorts and targets.
+ * Event observers: keep role assignments in line with cohorts, users and targets.
  *
  * @package    local_cohortaccess
  * @copyright  2026 CEPV, Yann Rapenne
@@ -76,5 +76,14 @@ class observer {
      */
     public static function role_deleted(\core\event\role_deleted $event): void {
         manager::role_deleted($event->objectid);
+    }
+
+    /**
+     * A user was deleted.
+     *
+     * @param \core\event\user_deleted $event Event.
+     */
+    public static function user_deleted(\core\event\user_deleted $event): void {
+        manager::user_deleted($event->objectid);
     }
 }

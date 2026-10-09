@@ -152,4 +152,16 @@ final class observer_test extends \advanced_testcase {
         $this->assertFalse(manager::get_rule($rule->id));
         $this->assertEquals(0, manager::count_assignments($rule->id));
     }
+
+    public function test_user_deleted_removes_user_rules(): void {
+        $rule = $this->create_rule(['userid' => $this->user->id]);
+        $cohortrule = $this->create_rule();
+        $this->assertEquals(1, manager::count_assignments($rule->id));
+
+        delete_user($this->user);
+
+        $this->assertFalse(manager::get_rule($rule->id));
+        $this->assertEquals(0, manager::count_assignments($rule->id));
+        $this->assertNotEmpty(manager::get_rule($cohortrule->id));
+    }
 }

@@ -49,4 +49,8 @@ $observers = [
         'eventname' => '\core\event\role_deleted',
         'callback' => '\local_cohortaccess\observer::role_deleted',
     ],
+    [
+        'eventname' => '\core\event\user_deleted',
+        'callback' => '\local_cohortaccess\observer::user_deleted',
+    ],
 ];

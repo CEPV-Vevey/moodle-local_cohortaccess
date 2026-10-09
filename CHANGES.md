@@ -1,6 +1,6 @@
 # Changes
 
-## 0.4.0 (unreleased)
+## 0.4.0 (2026-10-09)
 
 - Rules can give access to a single user instead of a cohort: choose
   "Access granted to: User" in the rule form (requires

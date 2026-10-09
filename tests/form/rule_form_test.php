@@ -270,11 +270,53 @@ final class rule_form_test extends \advanced_testcase {
         [$rule, $errors] = $this->submit(['beneficiarytype' => manager::BENEFICIARY_USER,
             'userid' => $user->id, 'courseid' => $this->course->id]);
         $this->assertNull($rule);
-        $this->assertNotEmpty($errors);
+        $this->assertArrayHasKey('beneficiarytype', $errors);
 
         [$rule, $errors] = $this->submit(['courseid' => $this->course->id]);
         $this->assertEmpty($errors);
         $this->assertEquals($this->cohort->id, $rule->cohortid);
+    }
+
+    /**
+     * Create a user rule as admin, then switch to a manager without viewalldetails.
+     *
+     * @return array [rule, user]
+     */
+    private function create_user_rule_for_delegated_manager(): array {
+        $this->setAdminUser();
+        $user = $this->getDataGenerator()->create_user(['firstname' => 'Ada', 'lastname' => 'Lovelace']);
+        $existing = manager::create_rule((object) ['userid' => $user->id,
+            'targettype' => manager::TARGET_COURSE, 'targetid' => $this->course->id,
+            'roleid' => $this->roleid, 'enabled' => 1]);
+        $this->set_delegated_manager();
+        return [$existing, $user];
+    }
+
+    public function test_delegated_manager_can_edit_existing_user_rule(): void {
+        [$existing, $user] = $this->create_user_rule_for_delegated_manager();
+
+        $form = new rule_form(null, ['rule' => $existing]);
+        $form->set_data_from_rule($existing);
+        $html = $form->render();
+        $this->assertStringContainsString('Ada Lovelace', $html);
+        $this->assertDoesNotMatchRegularExpression('/<select[^>]*name="userid"/', $html);
+        $this->assertMatchesRegularExpression('/<input(?=[^>]*type="hidden")(?=[^>]*name="userid")[^>]*>/', $html);
+
+        [$rule, $errors] = $this->submit(['beneficiarytype' => manager::BENEFICIARY_USER,
+            'userid' => $user->id, 'courseid' => $this->course->id, 'enabled' => 0], $existing);
+        $this->assertEmpty($errors);
+        $this->assertEquals($user->id, $rule->userid);
+        $this->assertEquals(0, $rule->enabled);
+    }
+
+    public function test_delegated_manager_cannot_change_user_of_existing_rule(): void {
+        [$existing] = $this->create_user_rule_for_delegated_manager();
+        $other = $this->getDataGenerator()->create_user();
+
+        [$rule, $errors] = $this->submit(['beneficiarytype' => manager::BENEFICIARY_USER,
+            'userid' => $other->id, 'courseid' => $this->course->id], $existing);
+        $this->assertNull($rule);
+        $this->assertArrayHasKey('beneficiarytype', $errors);
     }
 
     public function test_edit_form_is_prefilled_from_user_rule(): void {

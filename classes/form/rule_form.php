@@ -86,6 +86,17 @@ class rule_form extends \moodleform {
             ]);
             $mform->setType('userid', PARAM_INT);
             $mform->hideIf('userid', 'beneficiarytype', 'neq', manager::BENEFICIARY_USER);
+        } else if (!empty($this->_customdata['rule']->userid)) {
+            // Without viewalldetails the user cannot be changed: show it read-only and keep it.
+            $user = $DB->get_record('user', ['id' => $this->_customdata['rule']->userid, 'deleted' => 0]);
+            $mform->addElement(
+                'static',
+                'userdisplay',
+                get_string('user', 'local_cohortaccess'),
+                $user ? s(fullname($user)) : get_string('usermissing', 'local_cohortaccess')
+            );
+            $mform->addElement('hidden', 'userid', $this->_customdata['rule']->userid);
+            $mform->setType('userid', PARAM_INT);
         }
 
         $mform->addElement('select', 'targettype', get_string('targettype', 'local_cohortaccess'), [
@@ -171,7 +182,8 @@ class rule_form extends \moodleform {
 
         if ($isuser) {
             $user = $rule->userid ? $DB->get_record('user', ['id' => $rule->userid, 'deleted' => 0]) : false;
-            if (!$this->canpickuser) {
+            $existing = $this->_customdata['rule'] ?? null;
+            if (!$this->canpickuser && (!$existing || empty($existing->userid) || $existing->userid != $rule->userid)) {
                 $errors['beneficiarytype'] = get_string('required');
             } else if (!$user || isguestuser($user)) {
                 $errors['userid'] = get_string('required');

@@ -1,5 +1,17 @@
 # Changes
 
+## 0.4.0 (unreleased)
+
+- Rules can give access to a single user instead of a cohort: choose
+  "Access granted to: User" in the rule form (requires
+  `moodle/user:viewalldetails`). User rules are listed with cohort rules, with
+  the same actions and warnings.
+- Deleting a user deletes the rules giving them access.
+- Privacy API: rules for a single user are exported and deleted with the user's
+  data (the plugin was a `null_provider` before).
+- Database: `cohortid` is now optional and a `userid` column is added
+  (upgrade step, existing rules unchanged).
+
 ## 0.3.0 (2026-10-06)
 
 - Compatible with Moodle 5.0 to 5.3 (`supported = [500, 503]`).

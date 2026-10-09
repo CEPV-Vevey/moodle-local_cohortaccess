@@ -5,11 +5,13 @@
 ![Moodle 5.0 – 5.3](https://img.shields.io/badge/Moodle-5.0%20%E2%80%93%205.3-orange)
 [![License: GPL v3+](https://img.shields.io/badge/license-GPLv3%2B-blue)](https://www.gnu.org/licenses/gpl-3.0.html)
 
-A Moodle local plugin that gives the members of a cohort **view access** to a
-course, or to every course of a category, **without enrolling them**.
+A Moodle local plugin that gives the members of a cohort, or a single user,
+**view access** to a course, or to every course of a category, **without
+enrolling them**.
 
-The plugin assigns a role (`role_assignments`) to the cohort members in the
-course or category context and keeps it in sync with the cohort. It never
+The plugin assigns a role (`role_assignments`) to the cohort members (or to
+the user) in the course or category context and keeps it in sync with the
+cohort. It never
 creates enrolments (`user_enrolments`).
 
 ![Rules list](docs/rules-list.png)
@@ -97,12 +99,16 @@ below *Cohorts*).
 
 ![Rule form](docs/rule-form.png)
 
-1. **Add a rule**: choose the cohort (system or category cohort), the target (a
+1. **Add a rule**: choose who gets access — a cohort (system or category
+   cohort) or a single user (searched by name or email) — then the target (a
    course or a course category) and the role. Saving creates the role
-   assignments at once.
-2. The list shows, for each rule, the number of cohort members and of active
-   role assignments, and a ⚠ next to the role or the target when the role lacks
-   a capability or the target no longer exists.
+   assignments at once. Choosing a single user requires
+   `moodle/user:viewalldetails` (managers have it); without it, only cohorts
+   are offered.
+2. The list shows, for each rule, the number of beneficiaries (cohort members,
+   or 1 for a user) and of active role assignments, and a ⚠ next to the role or
+   the target when the role lacks a capability, the target no longer exists or
+   the user no longer exists.
 3. Actions, as in Moodle core management tables:
    - eye icon: **disable** (open eye) or **enable** (slashed eye) the rule;
      disabled rules are greyed out and their assignments are removed;
@@ -112,6 +118,11 @@ below *Cohorts*).
 
 Members then open the course with its direct link (`/course/view.php?id=…`) or
 by browsing the category.
+
+Single users can also be given a role with Moodle core (*Participants → Other
+users → Assign roles* in a course, *Permissions → Assign roles* in a category).
+Rules for a single user keep those accesses in the same list as cohort rules,
+with the same actions.
 
 ## How it works
 
@@ -123,6 +134,7 @@ by browsing the category.
   ones.
 - Deleting a cohort, course, category or role deletes the rules using it,
   together with their assignments.
+- Deleting a user deletes the rules giving them access.
 - A scheduled task (`\local_cohortaccess\task\sync`, hourly) resynchronises all
   rules and repairs any drift, including assignments left by deleted rules.
   Run it manually with
@@ -192,12 +204,17 @@ interrupted synchronisation.
   confirmation.
 - Removals are always scoped to `component = local_cohortaccess` and the rule
   id: manual role assignments and those of other plugins are never touched.
+- Picking a single user uses the core user search, which requires
+  `moodle/user:viewalldetails` in the system context.
 
 ## Privacy
 
-The plugin stores no personal data: rules only reference cohorts, roles,
-courses and categories. The role assignments it creates are core data, stored,
-exported and deleted by Moodle's role subsystem (privacy API `null_provider`).
+Rules for a single user store that user's id, together with the target, the
+role, the enabled flag and the dates. The plugin implements the privacy API:
+these rules are exported with the user's data, and deleting the user's data
+deletes their rules and the role assignments the rules created. Cohort rules
+hold no personal data. The role assignments themselves are core data, handled
+by Moodle's role subsystem.
 
 ## Uninstalling
 
